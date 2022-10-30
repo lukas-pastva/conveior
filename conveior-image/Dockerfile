@@ -27,7 +27,7 @@ RUN mkdir -p /var/log && \
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY action /action
-RUN chmod +x /action
+RUN chmod -R +x /action
 
 RUN (crontab -l ; echo "*/5 * * * * /action/sys-cron.sh >> /var/log/cron.log 2>&1") | crontab && \
     (crontab -l ; echo "0 19 * * * /action/sys-cron24.sh >> /var/log/cron.log 2>&1") | crontab
