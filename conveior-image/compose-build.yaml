@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+
+  conveior:
+    container_name: conveior
+    build: 
+      context: .
+      dockerfile: Dockerfile

@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+
+  conveior:
+    container_name: "conveior"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    logging:
+      driver: "loki"
+      options:
+        loki-url: "https://admin:${API_PASS}@${LOKI_URL}/loki/api/v1/push"
+        loki-retries: 5
+        loki-batch-size: 400
+    environment:
+      API_PASS: "${API_PASS}"
+      API_USER: "admin"
+      BACKUP: "${BACKUP}"
+      BACKUP_CERTIFICATES: "${BACKUP_CERTIFICATES}"
+      BACKUP_VOLUMES: "${BACKUP_VOLUMES}"
+      BRANCH: "${BRANCH}"
+      CONTAINERS_WEB_SERVER: "${CONTAINERS_WEB_SERVER}"
+      CONTAINERS_MONITOR: "${CONTAINERS_MONITOR}"
+      CONTAINERS_MYSQL: "${CONTAINERS_MYSQL}"
+      CONTAINERS_PHP: "${CONTAINERS_PHP}"
+      CUSTOMER: "${CUSTOMER}"
+      DOMAINS: "${DOMAIN_ADMINER},${DOMAIN_BEAM}"
+      INFLUX_API_URL: "${INFLUX_API_URL}"
+      MYSQL_API_URL: "${MYSQL_API_URL}"
+      BUCKET_TYPE: "${BUCKET_TYPE}"
+      BUCKET_NAME: "${BUCKET_NAME}"
+      SLACK_HOOK: "${SLACK_HOOK}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: "always"
