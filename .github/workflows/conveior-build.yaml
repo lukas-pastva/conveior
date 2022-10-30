@@ -1,7 +1,7 @@
 name: conveior-build
 
 on:
-  workflow_dispatch:
+  push:
 
 jobs:
   conveior-build:
