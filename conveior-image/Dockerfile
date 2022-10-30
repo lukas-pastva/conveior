@@ -34,4 +34,4 @@ RUN (crontab -l ; echo "*/5 * * * * /action/sys-cron.sh >> /var/log/cron.log 2>&
 
 WORKDIR /action
 EXPOSE 80
-ENTRYPOINT ["/sys-entrypoint.sh"]
+ENTRYPOINT ["/action/sys-entrypoint.sh"]
