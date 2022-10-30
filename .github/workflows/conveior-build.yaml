@@ -16,11 +16,9 @@ jobs:
 
       - name: build
         run: |
-          COMPOSE_FILE="./conveior-image/compose-build.yaml"
           VERSION=$(git describe | awk -F '-' '{print $1}')
-          
           docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
-          docker-compose -f ${COMPOSE_FILE} build --pull
+          docker-compose -f ./conveior-image/compose-build.yaml build --pull
           docker tag conveior-image_conveior:latest registry.hub.docker.com/lukaspastva/conveior:latest
           docker tag conveior-image_conveior:latest registry.hub.docker.com/lukaspastva/conveior:${VERSION}
           docker push registry.hub.docker.com/lukaspastva/conveior:latest
