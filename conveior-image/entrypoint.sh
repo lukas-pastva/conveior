@@ -11,3 +11,4 @@ echo ""
 echo ""
 
 service cron start & tail -f /var/log/cron.log
+nginx -g "daemon off;"

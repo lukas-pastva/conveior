@@ -9,6 +9,8 @@ RUN apt-get update -qq && \
     docker.io \
     jq \
     libzip-dev \
+    lua5.4 \
+    nginx \
     procps \
     vim \
     unzip \
@@ -23,6 +25,7 @@ RUN mkdir -p /var/log && \
     chown 33 /action && \
     chmod 777 /action
 
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY action /action
 COPY entrypoint.sh cron.sh cron24.sh /
 RUN chmod +x /entrypoint.sh /cron.sh /cron24.sh
