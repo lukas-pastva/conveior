@@ -12,6 +12,7 @@ RUN apt-get update -qq && \
     libnginx-mod-http-lua \
     lua5.4 \
     nginx \
+    netcat \
     procps \
     vim \
     unzip \
