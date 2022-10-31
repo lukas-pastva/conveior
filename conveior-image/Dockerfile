@@ -9,6 +9,7 @@ RUN apt-get update -qq && \
     docker.io \
     jq \
     libzip-dev \
+    libnginx-mod-http-lua \
     lua5.4 \
     nginx \
     procps \
