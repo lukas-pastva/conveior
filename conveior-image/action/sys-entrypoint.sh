@@ -10,13 +10,14 @@ echo " ██████  ██████  ██   ████   ███
 echo ""
 echo ""
 
-service cron start & tail -f /var/log/cron.log
 
 #nginx -g "daemon off;"
 
-#while true;
-#  do echo -e "HTTP/1.1 200 OK\n\n$(bash /action/sys-cron.sh)" \
-#  | nc -l -k -p 8080 -q 1;
-#done
+while true;
+  do echo -e "HTTP/1.1 200 OK\n\n$(bash /action/sys-cron.sh)" \
+  | nc -l -k -p 8080 -q 1;
+done
 
-echo -e "HTTP/1.1 200 OK\r\n$(date)\r\n\r\n$(bash /action/sys-cron.sh)" |  nc -vl 8080
+#echo -e "HTTP/1.1 200 OK\r\n$(date)\r\n\r\n$(bash /action/sys-cron.sh)" |  nc -vl 8080
+
+#service cron start & tail -f /var/log/cron.log
