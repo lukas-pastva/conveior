@@ -20,7 +20,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/*
 
 
-RUN mkdir -p /var/log && \
+RUN mkdir -p /var/log /usr/share/nginx/logs && \
     touch /var/log/cron.log && \
     mkdir /action && \
     chown 33 /action && \
