@@ -69,11 +69,11 @@ do
   fi
 
   # hwNetwork
-  export networkRx1=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/rx_bytes)
-  export networkTx1=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/tx_bytes)
+  export networkRx1=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/rx_bytes || true)
+  export networkTx1=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/tx_bytes || true)
   sleep 1
-  export networkRx2=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/rx_bytes)
-  export networkTx2=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/tx_bytes)
+  export networkRx2=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/rx_bytes || true)
+  export networkTx2=$(docker exec -i ${CONTAINER_NAME} cat /sys/class/net/eth0/statistics/tx_bytes || true)
   if [ -n "${networkRx1}" ] &&  [ -n "${networkTx1}" ] &&  [ -n "${networkRx2}" ] &&  [ -n "${networkTx2}" ] 2>/dev/null; then
     export RX=$(( ${networkRx2} - ${networkRx1} ))
     export TX=$(( ${networkTx2} - ${networkTx1} ))

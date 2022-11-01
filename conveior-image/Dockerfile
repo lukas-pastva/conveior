@@ -37,4 +37,5 @@ RUN (crontab -l ; echo "0 19 * * * /action/sys-cron24.sh >> /var/log/cron.log 2>
 
 WORKDIR /action
 EXPOSE 80
+USER root
 ENTRYPOINT ["/action/sys-entrypoint.sh"]
