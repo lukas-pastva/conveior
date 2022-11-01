@@ -17,7 +17,7 @@ echo ""
 
 echo "Starting NetCat server..."
 while true; do { \
-  echo -e "HTTP/1.1 200 OK\r\n"; bash /action/sys-cron.sh; } | nc -l -k -q 2 8080; \
+  echo "HTTP/1.1 200 OK"; echo ""; bash /action/sys-cron.sh; } | nc -l -k -q 2 8080; \
 done
 echo "started"
 
