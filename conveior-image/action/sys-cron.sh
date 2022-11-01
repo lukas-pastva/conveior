@@ -1,7 +1,8 @@
 #!/bin/bash
 export $(xargs -0 -a "/proc/1/environ")
 
-echo "asdf"
+echo "# conveior.io return data"
+bash /action/action-hw.sh
 #return=$(bash /action/action-hw.sh)
 #echo -e "\r\nContent-type: text/html\r\n\r\n${return}"
 
