@@ -13,9 +13,11 @@ echo ""
 
 nginx -g "daemon off;"
 
-while true;
-  do echo -e "HTTP/1.1 200 OK\r\n$(date)\r\nContent-type: text/html\r\n\r\n$(bash /action/sys-cron.sh)" \
-  | nc -l -k -p 8080 -q 1;
+#  do echo -e "HTTP/1.1 200 OK\r\n$(date)\r\nContent-type: text/html\r\n\r\n$(bash /action/sys-cron.sh)" | nc -l -k -q 5 -p 8080 -q 1;
+
+
+while true; do { \
+  echo -ne "HTTP/1.1 200 OK\r\n"; bash /action/sys-cron.sh; } | nc -l -k -q 2 8080; \
 done
 
 #echo -e "HTTP/1.1 200 OK\r\n$(date)\r\n\r\n$(bash /action/sys-cron.sh)" |  nc -vl 8080
