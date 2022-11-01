@@ -14,7 +14,7 @@ echo ""
 #nginx -g "daemon off;"
 
 while true;
-  do echo -e "HTTP/1.1 200 OK\n\n$(bash /action/sys-cron.sh)" \
+  do echo -e "HTTP/1.1 200 OK\r\n$(date)\r\n\r\n$(bash /action/sys-cron.sh)" \
   | nc -l -k -p 8080 -q 1;
 done
 
