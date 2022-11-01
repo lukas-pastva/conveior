@@ -11,7 +11,7 @@ echo ""
 echo ""
 
 
-nginx -g "daemon off;"
+#nginx -g "daemon off;"
 
 #  do echo -e "HTTP/1.1 200 OK\r\n$(date)\r\nContent-type: text/html\r\n\r\n$(bash /action/sys-cron.sh)" | nc -l -k -q 5 -p 8080 -q 1;
 
