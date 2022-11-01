@@ -1,9 +1,9 @@
 #!/bin/bash
 export $(xargs -0 -a "/proc/1/environ")
 
-
-return=$(bash /action/action-hw.sh)
-echo -e "\r\nContent-type: text/html\r\n\r\n${return}"
+echo "asdf"
+#return=$(bash /action/action-hw.sh)
+#echo -e "\r\nContent-type: text/html\r\n\r\n${return}"
 
 #echo -e "HTTP/1.0 200 OK\r\n$(date)\r\nContent-type: text/html\r\n\r\n${return}"
 
