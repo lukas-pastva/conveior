@@ -1,5 +1,5 @@
 #!/bin/bash
-source /action/action-functions.inc.sh
+source functions.inc.sh
 
 CONTAINER_LIST=$(docker ps -f status=running --format "{{.Names}}")
 export JSON=""

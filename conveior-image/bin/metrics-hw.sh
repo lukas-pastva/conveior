@@ -1,5 +1,5 @@
 #!/bin/bash
-source /action/action-functions.inc.sh
+source functions.inc.sh
 
 log_msg "Running HW monitor"
 

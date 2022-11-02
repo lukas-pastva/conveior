@@ -1,5 +1,5 @@
 #!/bin/bash
-source /action/action-functions.inc.sh
+source functions.inc.sh
 
 api_get_json "https://${MYSQL_API_URL}/devopssql/list"
 export SQL_QUERIES_JSON=${func_result}

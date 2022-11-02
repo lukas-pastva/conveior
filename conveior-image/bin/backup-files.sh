@@ -1,5 +1,5 @@
 #!/bin/bash
-source /action/action-functions.inc.sh
+source functions.inc.sh
 
 export IFS=","
 for ITEM in ${BACKUP}; do

@@ -1,7 +1,7 @@
 #!/bin/bash
 export $(xargs -0 -a "/proc/1/environ")
 
-source /action/action-functions.inc.sh
+source functions.inc.sh
 
 export SLEEP_TIME=$(shuf -i 10-200 -n1)
 
@@ -9,4 +9,4 @@ log_msg "running cron24.sh, but sleeping first for ${SLEEP_TIME} seconds"
 
 sleep "${SLEEP_TIME}"
 
-bash /action/action-backup.sh > /var/log/cron.log
+bash backup.sh > /var/log/cron.log
