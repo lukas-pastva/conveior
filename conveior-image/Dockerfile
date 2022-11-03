@@ -22,10 +22,7 @@ RUN apt-get update -qq && \
 
 
 RUN mkdir -p /var/log /usr/share/nginx/logs && \
-    touch /var/log/cron.log && \
-    mkdir /bin && \
-    chown 33 /bin && \
-    chmod 777 /bin
+    touch /var/log/cron.log
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY bin /usr/local/bin
