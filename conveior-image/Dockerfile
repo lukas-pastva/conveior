@@ -7,7 +7,6 @@ RUN apt-get update -qq && \
     cron \
     curl \
     docker.io \
-    docker-compose \
     jq \
     libzip-dev \
     libnginx-mod-http-lua \
@@ -24,6 +23,10 @@ RUN apt-get update -qq && \
 
 RUN mkdir -p /var/log /usr/share/nginx/logs && \
     touch /var/log/cron.log
+
+RUN curl -L https://github.com/docker/compose/releases/download/v2.10.2/docker-compose-linux-x86_64 -o '/usr/local/bin/docker-compose' && \
+    chmod +x /usr/local/bin/docker-compose && \
+    ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY bin /usr/local/bin
