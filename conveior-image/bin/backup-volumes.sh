@@ -23,7 +23,6 @@ for VOLUME in ${BACKUP_VOLUMES}; do
           docker exec -i sys-backupper-${VOLUME} bash -c "rm /tmp/${VOLUME}/${ZIP_FILE}"
 
           upload_file "/tmp/${ZIP_FILE}" "${CUSTOMER}-${BRANCH}" "backup-volume/${DATE}/${ZIP_FILE}"
-          api_post_item "volume" "${VOLUME}/${ZIP_FILE}" $(ls -nl "/tmp/${ZIP_FILE}" | awk '{print $5}')
 
           echo_prom_helper "Cleaning up"
           rm "/tmp/${ZIP_FILE}"

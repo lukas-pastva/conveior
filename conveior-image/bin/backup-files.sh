@@ -22,7 +22,6 @@ for ITEM in ${BACKUP}; do
     cd "${SERVER_DIR}/${LAST_DIR}" && zip -rqq "${ZIP_FILE}" "."
 
     upload_file "${ZIP_FILE}" "${CUSTOMER}-${BRANCH}" "backup-file/${DATE}/${ZIP_FILE_ONLY}"
-    api_post_item "backup" "${CONTAINER_NAME}/${ZIP_FILE_ONLY}" $(ls -nl "${ZIP_FILE}" | awk '{print $5}')
     rm "${ZIP_FILE}"
     find "${SERVER_DIR}" -mindepth 1 -delete
   else

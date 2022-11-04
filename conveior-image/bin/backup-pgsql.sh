@@ -27,8 +27,6 @@ for CONTAINER_NAME in ${CONTAINERS_PGSQL}; do
 
   upload_file "${ZIP_FILE}" "${CUSTOMER}-${BRANCH}" "backup-db/${DATE}/${ZIP_FILE_ONLY}"
 
-  api_post_item "backup" "${CONTAINER_NAME}/${ZIP_FILE_ONLY}" $(ls -nl ${ZIP_FILE} | awk '{print $5}')
-
   rm "${ZIP_FILE}"
 
 done

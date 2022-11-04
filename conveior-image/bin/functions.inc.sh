@@ -158,4 +158,12 @@ function send_slack_message() {
   curl -sX POST "${SLACK_HOOK}" -H "Content-Type: application/json" -d "{\"text\": \"${MESSAGE}\"}"
 }
 
-
+function get_container_name {
+  CONTAINER_SHORT=$1
+  export CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep -v _POD_ | grep "${CONTAINER_SHORT}")
+  if [[ "${CONTAINER}" == *"${CONTAINER_SHORT}"* ]]; then
+    func_result="${CONTAINER}"
+  else
+    func_result=""
+  fi
+}
