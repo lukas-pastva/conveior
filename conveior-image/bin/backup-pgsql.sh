@@ -3,7 +3,7 @@ source functions.inc.sh
 
 export IFS=","
 for CONTAINER_NAME in ${CONTAINERS_PGSQL}; do
-  log_msg "Backing up Postgres SQL ${CONTAINER_NAME}"
+  echo_prom_helper "Backing up Postgres SQL ${CONTAINER_NAME}"
 
   export SERVER_DIR="/tmp/${CONTAINER_NAME}"
   export FILE="dump-${CONTAINER_NAME}-${DATE}.sql"

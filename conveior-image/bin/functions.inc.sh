@@ -8,7 +8,7 @@ if [ -n "${BRANCH}" ]; then
     export INFLUX_API_FULL_URL="${INFLUX_API_FULL_URL}-${BRANCH}"
 fi
 
-function log_msg {
+function echo_prom_helper {
   echo "# HELP $1"
 }
 
@@ -16,11 +16,11 @@ function api_post_item () {
   curl -sX POST "${INFLUX_API_FULL_URL}" -H "Content-Type: application/json" -u "admin:${API_PASS}" -d "[{\"chart\": \"$1\",\"name\": \"$2\",\"value\": $3}]"
 }
 
-function api_post_list () {
-  export JSON=$1
-  JSON=$(echo "${JSON}" | rev | cut -c2- | rev)
-  curl -sLX POST "${INFLUX_API_FULL_URL}" -u "admin:${API_PASS}" -H 'Content-Type: application/json' -d "[${JSON}]"
-}
+#function api_post_list () {
+#  export JSON=$1
+#  JSON=$(echo "${JSON}" | rev | cut -c2- | rev)
+#  curl -sLX POST "${INFLUX_API_FULL_URL}" -u "admin:${API_PASS}" -H 'Content-Type: application/json' -d "[${JSON}]"
+#}
 
 function get_upload_credentials () {
   if [ "${BUCKET_TYPE}" == "GCP" ]; then
@@ -40,7 +40,7 @@ function get_upload_credentials () {
 }
 
 function upload_file () {
-  log_msg "Uploading ${BUCKET_NAME}-${2}/${3}"
+  echo_prom_helper "Uploading ${BUCKET_NAME}-${2}/${3}"
 
   if [ "${BUCKET_TYPE}" == "S3" ]; then
       get_upload_credentials
@@ -120,11 +120,11 @@ function restore_files() {
 
   # all files are downloaded, if more, lets concat, if none, lets exit
   if [ $(ls ./restore | wc -l) -eq 0 ]; then
-    log_msg "There are no files on GCP bucket"
+    echo_prom_helper "There are no files on GCP bucket"
     export restore_files="false"
   else
     if [ $(ls ./restore | wc -l) -ge 2 ]; then
-      log_msg "Multiple files concatenating"
+      echo_prom_helper "Multiple files concatenating"
       cat ./restore/* > ./restore/restore.zip
     else
       mv ./restore/$(ls ./restore) ./restore/restore.zip
@@ -132,14 +132,14 @@ function restore_files() {
     # now unzip the file
     unzip ./restore/restore.zip -d ./restore-unzipped
 
-    log_msg "Files fount:"
+    echo_prom_helper "Files fount:"
     ls -lart ./restore-unzipped/*
 
     if [  $(ls ./restore-unzipped | wc -l) -ge 1 ]; then
-        log_msg "Copying files into $CONTAINER:$DESTINATION"
+        echo_prom_helper "Copying files into $CONTAINER:$DESTINATION"
         docker cp ./restore-unzipped/. $CONTAINER:$DESTINATION
     else
-      log_msg "Was not able to restore certificates"
+      echo_prom_helper "Was not able to restore certificates"
       export restore_files="false"
     fi
 
@@ -154,7 +154,7 @@ function generate_password() {
 }
 
 function send_slack_message() {
-  log_msg "${MESSAGE}"
+  echo_prom_helper "${MESSAGE}"
   curl -sX POST "${SLACK_HOOK}" -H "Content-Type: application/json" -d "{\"text\": \"${MESSAGE}\"}"
 }
 

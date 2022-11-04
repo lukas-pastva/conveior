@@ -6,7 +6,7 @@ export SQL_QUERIES_JSON=${func_result}
 export IFS=","
 for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
 
-  log_msg "Sending queries from MySQL for ${CONTAINER_NAME}"
+  echo_prom_helper "Sending queries from MySQL for ${CONTAINER_NAME}"
 
   export SQL_PASS=$(docker exec -i ${CONTAINER_NAME} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
   if [[ "${SQL_PASS}" == "secret" ]]; then
@@ -25,10 +25,10 @@ for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
           if [[ "${QUERY^^}" != *"DELETE"* ]]; then
             if [[ "${QUERY^^}" != *"ALTER"* ]]; then
               if [[ "${QUERY^^}" != *"INSERT"* ]]; then
-                log_msg "executing query: ${QUERY}"
+                echo_prom_helper "executing query: ${QUERY}"
 
                 export QUERY_RESULT=$(echo ${QUERY} | docker exec -i ${CONTAINER_NAME} mysql -u${SQL_USER} -p${SQL_PASS})
-                export JSON=""
+                export PROMETHEUS_DATA=""
                 export i=0
                 export IFS=$'\n'
                 for QUERY_LINE in ${QUERY_RESULT}; do
@@ -44,7 +44,7 @@ for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
                         VALUE=$(echo ${VALUE} | jq '.|ceil')
                         if [[ $VALUE =~ ^-?[0-9]+$ ]]; then
                           # if [ "$VALUE" -gt 0 ]; then
-                          JSON="${JSON}{\"chart\":\"${API}\",\"name\":\"${NAME}\",\"value\":${VALUE}},";
+                          PROMETHEUS_DATA="${PROMETHEUS_DATA}{\"chart\":\"${API}\",\"name\":\"${NAME}\",\"value\":${VALUE}},";
                           # fi
                         fi
                       fi
@@ -52,7 +52,7 @@ for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
                   fi
                   i=$((i + 1))
                 done
-                api_post_list "${JSON}"
+                echo "${PROMETHEUS_DATA}"
               fi
             fi
           fi

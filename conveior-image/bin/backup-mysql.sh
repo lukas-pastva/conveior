@@ -3,7 +3,7 @@ source functions.inc.sh
 
 export IFS=","
 for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
-  log_msg "Backing up MySQL ${CONTAINER_NAME}"
+  echo_prom_helper "Backing up MySQL ${CONTAINER_NAME}"
 
   export DATABASES_STR=""
   export SERVER_DIR="/tmp/${CONTAINER_NAME}"
@@ -27,7 +27,7 @@ for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
   do
     DATABASES_STR="${DATABASE_ITEM} ${DATABASES_STR}"
   done
-  log_msg "Fount DBs: ${DATABASES_STR}"
+  echo_prom_helper "Fount DBs: ${DATABASES_STR}"
   docker exec -i ${CONTAINER_NAME} bash -c "mysqldump --user=${SQL_USER} --password='${SQL_PASS}' --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE}"
 
   docker cp ${CONTAINER_NAME}:/tmp/${FILE} ${SERVER_DIR}

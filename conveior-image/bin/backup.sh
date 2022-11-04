@@ -4,9 +4,9 @@ source functions.inc.sh
 # check whether we do have the google password
 get_upload_credentials
 if [ "${OAUTH2_TOKEN}" == "null" ]; then
-  log_msg "OAUTH2_TOKEN is not present, not backing up"
+  echo_prom_helper "OAUTH2_TOKEN is not present, not backing up"
 else
-  log_msg "Starting backup processes"
+  echo_prom_helper "Starting backup processes"
   bash backup-certificates.sh
   bash backup-mysql.sh
   bash backup-volumes.sh

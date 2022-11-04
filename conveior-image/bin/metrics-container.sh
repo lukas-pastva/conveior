@@ -2,7 +2,7 @@
 source functions.inc.sh
 
 CONTAINER_LIST=$(docker ps -f status=running --format "{{.Names}}")
-export JSON=""
+export PROMETHEUS_DATA=""
 export IFS=","
 for CONTAINER_MONITOR in ${CONTAINERS_MONITOR}; do
 
@@ -19,7 +19,7 @@ for CONTAINER_MONITOR in ${CONTAINERS_MONITOR}; do
       VALUE=3
     fi
   fi
-  JSON="${JSON}{\"chart\":\"dockerContainer\",\"name\":\"${CONTAINER}\",\"value\":${VALUE}},"
+  PROMETHEUS_DATA="${PROMETHEUS_DATA}{\"chart\":\"dockerContainer\",\"name\":\"${CONTAINER}\",\"value\":${VALUE}},"
 done
 
-api_post_list "${JSON}"
+echo "${PROMETHEUS_DATA}"

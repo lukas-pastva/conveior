@@ -12,7 +12,7 @@ for ITEM in ${BACKUP_CERTIFICATES}; do
 
   export RUNNING=$(docker ps -f status=running --format "{{.Names}}" | grep -x "${CONTAINER_NAME}")
   if [[ "${RUNNING}" == *"${CONTAINER_NAME}"* ]]; then
-    log_msg "Backing up certificates $ITEM"
+    echo_prom_helper "Backing up certificates $ITEM"
     mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
 

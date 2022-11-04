@@ -3,7 +3,7 @@ source functions.inc.sh
 
 export IFS=","
 for ITEM in ${BACKUP}; do
-  log_msg "Backing up files $ITEM"
+  echo_prom_helper "Backing up files $ITEM"
 
   export CONTAINER_NAME=$(echo ${ITEM} | awk -F":" '{print $1}')
   export VOLUME=$(echo ${ITEM} | awk -F":" '{print $2}')
@@ -26,6 +26,6 @@ for ITEM in ${BACKUP}; do
     rm "${ZIP_FILE}"
     find "${SERVER_DIR}" -mindepth 1 -delete
   else
-    log_msg "Empty directory ${VOLUME}, nothing to backup"
+    echo_prom_helper "Empty directory ${VOLUME}, nothing to backup"
   fi
 done
