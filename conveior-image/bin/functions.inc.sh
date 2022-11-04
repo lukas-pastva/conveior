@@ -72,6 +72,7 @@ function upload_file_s3 () {
   resource="/${BUCKET_NAME}-${CUSTOMER_BRANCH}/${FILE_S3}"
   stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
+  echo "curl -X PUT -T \"${FILENAME}\" -H \"Date: ${dateValue}\" -H \"Content-Type: ${contentType}\" -H \"Authorization: AWS ${S3_KEY}:${signature}\" \"${S3_URL}/${BUCKET_NAME}-${CUSTOMER_BRANCH}/${FILE_S3}\""
   curl -X PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}-${CUSTOMER_BRANCH}/${FILE_S3}"
 }
 
