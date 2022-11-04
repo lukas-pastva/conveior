@@ -3,24 +3,10 @@ set -e
 
 export EPOCH=$(date +%s)
 export DATE=$(date +"%Y-%m-%dT%H:%M:%SZ")
-export INFLUX_API_FULL_URL="${INFLUX_API_URL}/measurements?name=dashboard-${CUSTOMER}"
-if [ -n "${BRANCH}" ]; then
-    export INFLUX_API_FULL_URL="${INFLUX_API_FULL_URL}-${BRANCH}"
-fi
 
 function echo_prom_helper {
   echo "# HELP $1"
 }
-
-function api_post_item () {
-  curl -sX POST "${INFLUX_API_FULL_URL}" -H "Content-Type: application/json" -u "admin:${API_PASS}" -d "[{\"chart\": \"$1\",\"name\": \"$2\",\"value\": $3}]"
-}
-
-#function api_post_list () {
-#  export JSON=$1
-#  JSON=$(echo "${JSON}" | rev | cut -c2- | rev)
-#  curl -sLX POST "${INFLUX_API_FULL_URL}" -u "admin:${API_PASS}" -H 'Content-Type: application/json' -d "[${JSON}]"
-#}
 
 #function get_upload_credentials () {
 #  if [ "${BUCKET_TYPE}" == "GCP" ]; then
@@ -64,15 +50,15 @@ function upload_file_gcp () {
 
 function upload_file_s3 () {
   FILENAME="${1}"
-  CUSTOMER_BRANCH="${2}"
+  CUSTOMER="${2}"
   FILE_S3="${3}"
 #  contentType="application/x-compressed-tar"
   contentType="application/x-zip-compressed"
   dateValue=`date -R`
-  resource="/${BUCKET_NAME}-${CUSTOMER_BRANCH}/${FILE_S3}"
+  resource="/${BUCKET_NAME}-${CUSTOMER}/${FILE_S3}"
   stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-  curl -X PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}-${CUSTOMER_BRANCH}/${FILE_S3}"
+  curl -X PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}-${CUSTOMER}/${FILE_S3}"
 }
 
 function api_get_json () {
@@ -93,7 +79,7 @@ function restore_files() {
   # we need to find the directory with latest date
   if [ ${DATE} == "latest" ]; then
     export DATE_DIR=$(curl -s --noproxy '*' -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME-$CUSTOMER-$BRANCH/o \
+        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME-$CUSTOMER/o \
         |  jq '.items' | jq '.[] | select(.size!="0")' | jq -r '.name' \
         | grep "$GCP_DIR/" | sort -r | head -1 | awk -F "/" '{print $(NF-1)}' || true )
   else
@@ -106,14 +92,14 @@ function restore_files() {
   export IFS=$'\n'
   curl -s --noproxy '*' \
         -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME-$CUSTOMER-$BRANCH/o \
+        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME-$CUSTOMER/o \
         | jq '.items' | jq '.[] | select(.size!="0")' | jq -r '.name' \
         | grep "$GCP_DIR/" | while read LINE_GCP_FILE ; do
         if [[ "$LINE_GCP_FILE" == *"$GCP_DIR/$DATE_DIR"* ]]; then
           # actually download the file
           export FILENAME=$(echo $LINE_GCP_FILE | awk -F "/" '{print $NF}')
           curl --noproxy '*' -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-                "https://storage.googleapis.com/$BUCKET_NAME-$CUSTOMER-$BRANCH/$LINE_GCP_FILE" \
+                "https://storage.googleapis.com/$BUCKET_NAME-$CUSTOMER/$LINE_GCP_FILE" \
                 -o ./restore/${FILENAME}
         fi
   done

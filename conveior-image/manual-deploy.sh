@@ -11,11 +11,6 @@ if [ -z "${LOKI_URL+xxx}" ]; then
   export LOKI_URL="${LOKI_URL}"
 fi
 
-if [ -z "${INFLUX_API_URL+xxx}" ]; then
-  read -p "Please input INFLUX_API_URL  (example: influx-api.domain.com/api/v1) " INFLUX_API_URL
-  export INFLUX_API_URL="${INFLUX_API_URL}"
-fi
-
 if [ -z "${MYSQL_API_URL+xxx}" ]; then
   read -p "Please input MYSQL_API_URL  (example: mysql-api.domain.com/api/v1) " MYSQL_API_URL
   export MYSQL_API_URL="${MYSQL_API_URL}"
@@ -39,11 +34,6 @@ fi
 if [ -z "${BACKUP_VOLUMES+xxx}" ]; then
   read -p "Please input BACKUP_VOLUMES (example: volume-name-1,volume-name-2) " BACKUP_VOLUMES
   export BACKUP_VOLUMES="${BACKUP_VOLUMES}"
-fi
-
-if [ -z "${BRANCH+xxx}" ]; then
-  read -p "Please input BRANCH (example: main) " BRANCH
-  export BRANCH="${BRANCH}"
 fi
 
 if [ -z "${CONTAINERS_WEB_SERVER+xxx}" ]; then

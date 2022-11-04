@@ -19,7 +19,7 @@ for ITEM in ${BACKUP_CERTIFICATES}; do
     docker cp ${CONTAINER_NAME}:${VOLUME} ${SERVER_DIR}
     cd "${SERVER_DIR}" && zip -rqq "${ZIP_FILE}" "."
 
-    upload_file "${ZIP_FILE}" "${CUSTOMER}-${BRANCH}" "backup-certificate/${DATE}/${ZIP_FILE_ONLY}"
+    upload_file "${ZIP_FILE}" "${CUSTOMER}" "backup-certificate/${DATE}/${ZIP_FILE_ONLY}"
     rm "${ZIP_FILE}"
     find "${SERVER_DIR}" -mindepth 1 -delete
   fi

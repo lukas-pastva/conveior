@@ -25,7 +25,7 @@ for CONTAINER_NAME in ${CONTAINERS_PGSQL}; do
   zip -qq "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
   rm "/${SERVER_DIR}/${FILE}"
 
-  upload_file "${ZIP_FILE}" "${CUSTOMER}-${BRANCH}" "backup-db/${DATE}/${ZIP_FILE_ONLY}"
+  upload_file "${ZIP_FILE}" "${CUSTOMER}" "backup-db/${DATE}/${ZIP_FILE_ONLY}"
 
   rm "${ZIP_FILE}"
 

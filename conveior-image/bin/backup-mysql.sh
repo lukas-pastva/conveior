@@ -35,7 +35,7 @@ for CONTAINER_SHORT in ${CONTAINERS_MYSQL}; do
     zip -qq "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
     rm "/${SERVER_DIR}/${FILE}"
 
-    upload_file "${ZIP_FILE}" "${CUSTOMER}-${BRANCH}" "backup-mysql/${DATE}/${ZIP_FILE_ONLY}"
+    upload_file "${ZIP_FILE}" "${CUSTOMER}" "backup-mysql/${DATE}/${ZIP_FILE_ONLY}"
 
     rm "${ZIP_FILE}"
   fi
