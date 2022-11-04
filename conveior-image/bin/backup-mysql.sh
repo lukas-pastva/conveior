@@ -13,13 +13,11 @@ for CONTAINER_SHORT in ${CONTAINERS_MYSQL}; do
     export FILE="dump-${CONTAINER}-${DATE}.sql"
     export DESTINATION_FILE="${SERVER_DIR}/${FILE}.gz"
     export SQL_USER="root"
-  
-    mkdir -p ${SERVER_DIR}
-    find ${SERVER_DIR} -mindepth 1 -delete
-  
     export SQL_PASS=$(docker exec -i ${CONTAINER} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
 
-  
+    mkdir -p "${SERVER_DIR}"
+    find "${SERVER_DIR}" -mindepth 1 -delete
+
     export DATABASE_ITEMS=$(echo 'show databases;' | docker exec -i ${CONTAINER} bash -c "mysql -u ${SQL_USER} -p'${SQL_PASS}'" | grep -Fv -e 'Database' -e 'information_schema' -e 'mysql' -e 'performance_schema' -e 'sys' )
     export IFS=$'\n'
     for DATABASE_ITEM in $DATABASE_ITEMS;

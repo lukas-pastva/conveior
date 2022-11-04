@@ -22,32 +22,32 @@ function api_post_item () {
 #  curl -sLX POST "${INFLUX_API_FULL_URL}" -u "admin:${API_PASS}" -H 'Content-Type: application/json' -d "[${JSON}]"
 #}
 
-function get_upload_credentials () {
-  if [ "${BUCKET_TYPE}" == "GCP" ]; then
-      api_get_vault "REGISTRY_OAUTH2_ACCESS_TOKEN"
-      export OAUTH2_TOKEN=${func_result}
-  fi
-  if [ "${BUCKET_TYPE}" == "S3" ]; then
-      api_get_vault "S3_KEY"
-      export S3_KEY=${func_result}
-
-      api_get_vault "S3_SECRET"
-      export S3_SECRET=${func_result}
-
-      api_get_vault "S3_URL"
-      export S3_URL=${func_result}
-  fi
-}
+#function get_upload_credentials () {
+#  if [ "${BUCKET_TYPE}" == "GCP" ]; then
+#      api_get_vault "REGISTRY_OAUTH2_ACCESS_TOKEN"
+#      export OAUTH2_TOKEN=${func_result}
+#  fi
+#  if [ "${BUCKET_TYPE}" == "S3" ]; then
+#      api_get_vault "S3_KEY"
+#      export S3_KEY=${func_result}
+#
+#      api_get_vault "S3_SECRET"
+#      export S3_SECRET=${func_result}
+#
+#      api_get_vault "S3_URL"
+#      export S3_URL=${func_result}
+#  fi
+#}
 
 function upload_file () {
   echo_prom_helper "Uploading ${BUCKET_NAME}-${2}/${3}"
 
   if [ "${BUCKET_TYPE}" == "S3" ]; then
-      get_upload_credentials
+#      get_upload_credentials
       upload_file_s3 $1 $2 $3
   fi
   if [ "${BUCKET_TYPE}" == "GCP" ]; then
-      get_upload_credentials
+#      get_upload_credentials
       upload_file_gcp $1 $2 $3
   fi
 }
@@ -84,7 +84,7 @@ function api_get_vault () {
 }
 
 function restore_files() {
-  get_upload_credentials
+#  get_upload_credentials
   export GCP_DIR=$1
   export DATE=$2
   export CONTAINER=$3
