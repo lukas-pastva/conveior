@@ -7,6 +7,7 @@ RUN apt-get update -qq && \
     cron \
     curl \
     docker.io \
+    docker-compose \
     jq \
     libzip-dev \
     libnginx-mod-http-lua \
