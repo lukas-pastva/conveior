@@ -56,11 +56,6 @@ if [ -z "${CONTAINERS_PHP+xxx}" ]; then
   export CONTAINERS_PHP="${CONTAINERS_PHP}"
 fi
 
-if [ -z "${CUSTOMER+xxx}" ]; then
-  read -p "Please input CUSTOMER (example: google) " CUSTOMER
-  export CUSTOMER="${CUSTOMER}"
-fi
-
 if [ -z "${DOMAINS+xxx}" ]; then
   read -p "Please input DOMAINS (example: https://domain.com,http://domain.net) " DOMAINS
   export DOMAINS="${DOMAINS}"

@@ -9,10 +9,6 @@ for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
   echo_prom_helper "Sending queries from MySQL for ${CONTAINER_NAME}"
 
   export SQL_PASS=$(docker exec -i ${CONTAINER_NAME} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
-  if [[ "${SQL_PASS}" == "secret" ]]; then
-    api_get_vault "${CUSTOMER}-${CONTAINER_NAME}-MYSQL_PASS"
-    SQL_PASS=${func_result}
-  fi
 
   export SQL_USER="root"
   export QUERY_LIST=$(echo "${SQL_QUERIES_JSON}" | jq -r ".[] | select(.container==\"${CONTAINER_NAME}\") | .query")

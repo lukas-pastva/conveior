@@ -21,7 +21,7 @@ for ITEM in ${BACKUP}; do
     export LAST_DIR=$(echo ${VOLUME} | awk -F"/" '{print $NF}')
     cd "${SERVER_DIR}/${LAST_DIR}" && zip -rqq "${ZIP_FILE}" "."
 
-    upload_file "${ZIP_FILE}" "${CUSTOMER}" "backup-file/${DATE}/${ZIP_FILE_ONLY}"
+    upload_file "${ZIP_FILE}" "backup-file/${DATE}/${ZIP_FILE_ONLY}"
     rm "${ZIP_FILE}"
     find "${SERVER_DIR}" -mindepth 1 -delete
   else

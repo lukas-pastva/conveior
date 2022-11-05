@@ -26,15 +26,15 @@ function echo_prom_helper {
 #}
 
 function upload_file () {
-  echo_prom_helper "Uploading ${BUCKET_NAME}-${2}/${3}"
+  echo_prom_helper "Uploading ${BUCKET_NAME}/${2}"
 
   if [ "${BUCKET_TYPE}" == "S3" ]; then
 #      get_upload_credentials
-      upload_file_s3 $1 $2 $3
+      upload_file_s3 $1 $2
   fi
   if [ "${BUCKET_TYPE}" == "GCP" ]; then
 #      get_upload_credentials
-      upload_file_gcp $1 $2 $3
+      upload_file_gcp $1 $2
   fi
 }
 
@@ -45,20 +45,19 @@ function upload_file_gcp () {
       -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
       -H "Content-Type: application/x-gzip-compressed" \
       -H "Content-Length: ${FILE_SIZE}" \
-      "https://storage.googleapis.com/upload/storage/v1/b/$BUCKET_NAME-$2/o?uploadType=media&name=$3" > /dev/null
+      "https://storage.googleapis.com/upload/storage/v1/b/$BUCKET_NAME/o?uploadType=media&name=$2" > /dev/null
 }
 
 function upload_file_s3 () {
   FILENAME="${1}"
-  CUSTOMER="${2}"
-  FILE_S3="${3}"
+  FILE_S3="${2}"
 #  contentType="application/x-compressed-tar"
   contentType="application/x-zip-compressed"
   dateValue=`date -R`
-  resource="/${BUCKET_NAME}-${CUSTOMER}/${FILE_S3}"
+  resource="/${BUCKET_NAME}/${FILE_S3}"
   stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-  curl -X PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}-${CUSTOMER}/${FILE_S3}"
+  curl -X PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
 }
 
 function api_get_json () {
@@ -79,7 +78,7 @@ function restore_files() {
   # we need to find the directory with latest date
   if [ ${DATE} == "latest" ]; then
     export DATE_DIR=$(curl -s --noproxy '*' -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME-$CUSTOMER/o \
+        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME/o \
         |  jq '.items' | jq '.[] | select(.size!="0")' | jq -r '.name' \
         | grep "$GCP_DIR/" | sort -r | head -1 | awk -F "/" '{print $(NF-1)}' || true )
   else
@@ -92,14 +91,14 @@ function restore_files() {
   export IFS=$'\n'
   curl -s --noproxy '*' \
         -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME-$CUSTOMER/o \
+        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME/o \
         | jq '.items' | jq '.[] | select(.size!="0")' | jq -r '.name' \
         | grep "$GCP_DIR/" | while read LINE_GCP_FILE ; do
         if [[ "$LINE_GCP_FILE" == *"$GCP_DIR/$DATE_DIR"* ]]; then
           # actually download the file
           export FILENAME=$(echo $LINE_GCP_FILE | awk -F "/" '{print $NF}')
           curl --noproxy '*' -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-                "https://storage.googleapis.com/$BUCKET_NAME-$CUSTOMER/$LINE_GCP_FILE" \
+                "https://storage.googleapis.com/$BUCKET_NAME/$LINE_GCP_FILE" \
                 -o ./restore/${FILENAME}
         fi
   done

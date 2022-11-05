@@ -22,7 +22,7 @@ for VOLUME in ${BACKUP_VOLUMES}; do
           docker cp sys-backupper-${VOLUME}:/tmp/${VOLUME}/${ZIP_FILE} /tmp
           docker exec -i sys-backupper-${VOLUME} bash -c "rm /tmp/${VOLUME}/${ZIP_FILE}"
 
-          upload_file "/tmp/${ZIP_FILE}" "${CUSTOMER}" "backup-volume/${DATE}/${ZIP_FILE}"
+          upload_file "/tmp/${ZIP_FILE}" "backup-volume/${DATE}/${ZIP_FILE}"
 
           echo_prom_helper "Cleaning up"
           rm "/tmp/${ZIP_FILE}"
