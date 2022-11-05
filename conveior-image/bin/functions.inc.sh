@@ -8,23 +8,6 @@ function echo_prom_helper {
   echo "# HELP $1"
 }
 
-#function get_upload_credentials () {
-#  if [ "${BUCKET_TYPE}" == "GCP" ]; then
-#      api_get_vault "REGISTRY_OAUTH2_ACCESS_TOKEN"
-#      export OAUTH2_TOKEN=${func_result}
-#  fi
-#  if [ "${BUCKET_TYPE}" == "S3" ]; then
-#      api_get_vault "S3_KEY"
-#      export S3_KEY=${func_result}
-#
-#      api_get_vault "S3_SECRET"
-#      export S3_SECRET=${func_result}
-#
-#      api_get_vault "S3_URL"
-#      export S3_URL=${func_result}
-#  fi
-#}
-
 function upload_file () {
   echo_prom_helper "Uploading ${BUCKET_NAME}/${2}"
 
@@ -145,7 +128,11 @@ function send_slack_message() {
 
 function get_container_name {
   CONTAINER_SHORT=$1
-  export CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep -v _POD_ | grep "${CONTAINER_SHORT}")
+  # here I am getting shortest name of container, that is because containers han be in format "web, web-sql, web-sql-pma"
+  CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep -v _POD_ | grep "${CONTAINER_SHORT}" | awk '
+                     NR==1 || length<len {len=length; line=$0}
+                     END {print line}
+                   ')
   if [[ "${CONTAINER}" == *"${CONTAINER_SHORT}"* ]]; then
     func_result="${CONTAINER}"
   else
