@@ -16,7 +16,6 @@ services:
       API_USER: "admin"
       BACKUP: ""
       BACKUP_CERTIFICATES: "sys-nginx:/etc/letsencrypt"
-      BACKUP_VOLUMES: "sys-influx_sys-influx"
       CONTAINERS_WEB_SERVER: "sys-nginx"
       CONTAINERS_MONITOR: "sys-renderer:info,sys-home:alert,conveior:alert"
       CONTAINERS_MYSQL: "sys-mysql"

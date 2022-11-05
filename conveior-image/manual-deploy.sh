@@ -31,11 +31,6 @@ if [ -z "${BACKUP_CERTIFICATES+xxx}" ]; then
   export BACKUP_CERTIFICATES="${BACKUP_CERTIFICATES}"
 fi
 
-if [ -z "${BACKUP_VOLUMES+xxx}" ]; then
-  read -p "Please input BACKUP_VOLUMES (example: volume-name-1,volume-name-2) " BACKUP_VOLUMES
-  export BACKUP_VOLUMES="${BACKUP_VOLUMES}"
-fi
-
 if [ -z "${CONTAINERS_WEB_SERVER+xxx}" ]; then
   read -p "Please input CONTAINERS_WEB_SERVER (example: web,web-2) " CONTAINERS_WEB_SERVER
   export CONTAINERS_WEB_SERVER="${CONTAINERS_WEB_SERVER}"
