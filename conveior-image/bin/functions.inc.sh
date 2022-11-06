@@ -56,15 +56,19 @@ function upload_file_gcp () {
 }
 
 function upload_file_s3 () {
-  FILENAME="${1}"
+  ZIP_FILE="${1}"
   FILE_S3="${2}"
 #  contentType="application/x-compressed-tar"
   contentType="application/x-zip-compressed"
-  dateValue=`date -R`
+  dateValue=$(date -R)
   resource="/${BUCKET_NAME}/${FILE_S3}"
-  stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
-  signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-  curl -sX PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
+  signature=$(echo -en "PUT
+
+${contentType}
+${dateValue}
+${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
+  echo "curl -sX PUT -T \"${ZIP_FILE}\" -H \"Date: ${dateValue}\" -H \"Content-Type: ${contentType}\" -H \"Authorization: AWS ${S3_KEY}:${signature}\" \"${S3_URL}/${BUCKET_NAME}/${FILE_S3}\""
+  curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
 }
 
 function get_container_name {
