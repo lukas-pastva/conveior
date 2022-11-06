@@ -25,16 +25,23 @@ erDiagram
 ```
 
 
-### how to s3
+### how to S3 PUT
 ```
-bucket=tronic
-resource="/${bucket}/${file}"
 contentType="application/x-compressed-tar"
 dateValue=`date -R`
+resource="/${BUCKET_NAME}/${FILE_S3}"
 stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
-s3Key=xxx
-s3Secret=xxx
-signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${s3Secret} -binary | base64`
-curl -X PUT -T "${file}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${s3Key}:${signature}" "https://eu2.contabostorage.com/${bucket}/${file}"
+signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
+curl -X PUT -T "${FILE_S3}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "https://eu2.contabostorage.com/${BUCKET_NAME}/${FILE_S3}"
+```
+
+### how to S3 GET
+```
+contentType="application/x-compressed-tar"
+dateValue=`date -R`
+resource="/${BUCKET_NAME}/${FILE_S3}"
+stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
+signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
+curl -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "https://eu2.contabostorage.com/${BUCKET_NAME}/${FILE_S3}"
 ```
 

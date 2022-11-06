@@ -8,15 +8,39 @@ function echo_prom_helper {
   echo "# HELP $1"
 }
 
+function download_file {
+  echo_prom_helper "Downloading ${1} into ${2}"
+
+  if [ "${BUCKET_TYPE}" == "S3" ]; then
+      download_file_s3 $1 $2
+  fi
+  if [ "${BUCKET_TYPE}" == "GCP" ]; then
+      download_file_gcp $1 $2
+  fi
+}
+
+function download_file_s3 {
+  FILE_S3="${1}"
+  FILENAME="${2}"
+  contentType="application/x-zip-compressed"
+  dateValue=`date -R`
+  resource="/${BUCKET_NAME}/${FILE_S3}"
+  stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
+  signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
+  curl -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" -o "${FILENAME}"
+}
+
+function download_file_gcp {
+  curl -s --noproxy '*' -H "Authorization: Bearer ${OAUTH2_TOKEN}" "https://storage.googleapis.com/${1}" -o "${2}"
+}
+
 function upload_file () {
   echo_prom_helper "Uploading ${BUCKET_NAME}/${2}"
 
   if [ "${BUCKET_TYPE}" == "S3" ]; then
-#      get_upload_credentials
       upload_file_s3 $1 $2
   fi
   if [ "${BUCKET_TYPE}" == "GCP" ]; then
-#      get_upload_credentials
       upload_file_gcp $1 $2
   fi
 }
@@ -39,16 +63,14 @@ function upload_file_s3 () {
   dateValue=`date -R`
   resource="/${BUCKET_NAME}/${FILE_S3}"
   stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
+  echo -en "{stringToSign}: ${stringToSign}"
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
+  echo "curl -X PUT -T \"${FILENAME}\" -H \"Date: ${dateValue}\" -H \"Content-Type: ${contentType}\" -H \"Authorization: AWS ${S3_KEY}:${signature}\" \"${S3_URL}/${BUCKET_NAME}/${FILE_S3}\""
   curl -X PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
 }
 
 function api_get_json () {
   func_result=$(curl -sX GET "$1" -u "admin:${API_PASS}" )
-}
-
-function api_get_vault () {
-  func_result=$(curl -s ${MYSQL_API_URL}/devopsvault/list -u "admin:${API_PASS}" | jq -r ".[] | select(.name==\"$1\") | .value")
 }
 
 function restore_files() {
@@ -119,11 +141,6 @@ function restore_files() {
 
 function generate_password() {
   export generate_password=$(cat /proc/sys/kernel/random/uuid | sed 's/[-]//g' | head -c 20; echo;)
-}
-
-function send_slack_message() {
-  echo_prom_helper "${MESSAGE}"
-  curl -sX POST "${SLACK_HOOK}" -H "Content-Type: application/json" -d "{\"text\": \"${MESSAGE}\"}"
 }
 
 function get_container_name {

@@ -20,10 +20,8 @@ services:
       CONTAINERS_MONITOR: "sys-renderer:info,sys-home:alert,conveior:alert"
       CONTAINERS_MYSQL: "sys-mysql"
       CONTAINERS_PHP: "sys-pma"
-      MYSQL_API_URL: "${MYSQL_API_URL}"
       BUCKET_TYPE: "${BUCKET_TYPE}"
       BUCKET_NAME: "${BUCKET_NAME}"
-      SLACK_HOOK: "${SLACK_HOOK}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always

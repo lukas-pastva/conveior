@@ -1,8 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 
-api_get_json "https://${MYSQL_API_URL}/devopssql/list"
-export SQL_QUERIES_JSON=${func_result}
+#export SQL_QUERIES_JSON=${func_result}
 export IFS=","
 for CONTAINER_NAME in ${CONTAINERS_PGSQL}; do
 

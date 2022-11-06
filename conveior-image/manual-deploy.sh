@@ -11,11 +11,6 @@ if [ -z "${LOKI_URL+xxx}" ]; then
   export LOKI_URL="${LOKI_URL}"
 fi
 
-if [ -z "${MYSQL_API_URL+xxx}" ]; then
-  read -p "Please input MYSQL_API_URL  (example: mysql-api.domain.com/api/v1) " MYSQL_API_URL
-  export MYSQL_API_URL="${MYSQL_API_URL}"
-fi
-
 if [ -z "${API_PASS+xxx}" ]; then
   read -p "Please input API_PASS (example: secret) " API_PASS
   export API_PASS="${API_PASS}"
@@ -76,10 +71,6 @@ if [ -z "${S3_SECRET+xxx}" ]; then
   export S3_SECRET="${S3_SECRET}"
 fi
 
-if [ -z "${SLACK_HOOK+xxx}" ]; then
-  read -p "Please input SLACK_HOOK (example: https://slack.com/...) " SLACK_HOOK
-  export SLACK_HOOK="${SLACK_HOOK}"
-fi
 
 docker-compose -f compose-deploy-manual.yaml down || true
 docker-compose -f compose-deploy-manual.yaml build

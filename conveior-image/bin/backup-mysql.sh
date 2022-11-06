@@ -6,7 +6,7 @@ for CONTAINER_SHORT in ${CONTAINERS_MYSQL}; do
   get_container_name "${CONTAINER_SHORT}"
   CONTAINER="${func_result}"
   if [[ "${CONTAINER}" != "" ]]; then
-    echo_prom_helper "Backing up MySQL ${CONTAINER}"
+    echo_prom_helper "Backing up MySQL ${CONTAINER_SHORT}"
   
     export DATABASES_STR=""
     export SERVER_DIR="/tmp/${CONTAINER_SHORT}"
