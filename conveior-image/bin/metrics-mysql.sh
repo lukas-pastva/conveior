@@ -2,8 +2,8 @@
 source functions.inc.sh
 
 export IFS=","
-for CONTAINER_SHORT in ${CONTAINERS_MYSQL}; do
-  get_container_name "${CONTAINER_SHORT}"
+for POD in ${CONTAINERS_MYSQL}; do
+  get_container_name "${POD}"
   CONTAINER="${func_result}"
   if [[ "${CONTAINER}" != "" ]]; then
     echo_prom_helper "Sending info about MySQL for ${CONTAINER}"
@@ -22,7 +22,7 @@ for CONTAINER_SHORT in ${CONTAINERS_MYSQL}; do
       for TABLE_SIZE in ${TABLE_SIZE_LIST}; do
         export SIZE=$(echo ${TABLE_SIZE} | awk '{print $2}')
         export TABLE=$(echo ${TABLE_SIZE} | awk '{print $1}')
-        PROMETHEUS_DATA+=$'\n'"conveior_mysql_table_size{name=${CONTAINER_SHORT}/${DATABASE}/${TABLE}} ${SIZE}"
+        PROMETHEUS_DATA+=$'\n'"conveior_mysql_table_size{name=${POD}/${DATABASE}/${TABLE}} ${SIZE}"
       done
     done
   fi

@@ -144,9 +144,9 @@ function generate_password() {
 }
 
 function get_container_name {
-  CONTAINER_SHORT=$1
-  CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep "k8s_${CONTAINER_SHORT}_${CONTAINER_SHORT}")
-  if [[ "${CONTAINER}" == *"${CONTAINER_SHORT}"* ]]; then
+  POD=$1
+  CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep "k8s_${POD}_${POD}")
+  if [[ "${CONTAINER}" == *"${POD}"* ]]; then
     func_result="${CONTAINER}"
   else
     func_result=""

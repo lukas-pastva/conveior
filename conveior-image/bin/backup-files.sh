@@ -5,13 +5,13 @@ export IFS=","
 for ITEM in ${BACKUP}; do
   echo_prom_helper "Backing up files $ITEM"
 
-  export CONTAINER_SHORT=$(echo ${ITEM} | awk -F":" '{print $1}')
-  get_container_name "${CONTAINER_SHORT}"
+  export POD=$(echo ${ITEM} | awk -F":" '{print $1}')
+  get_container_name "${POD}"
   CONTAINER="${func_result}"
   if [[ "${CONTAINER}" != "" ]]; then
     export VOLUME=$(echo ${ITEM} | awk -F":" '{print $2}')
-    export SERVER_DIR="/tmp/${CONTAINER_SHORT}"
-    export FILE="${CONTAINER_SHORT}-${DATE}"
+    export SERVER_DIR="/tmp/${POD}"
+    export FILE="${POD}-${DATE}"
     export ZIP_FILE_ONLY="${FILE}.zip"
     export ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
 

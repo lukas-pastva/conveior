@@ -2,15 +2,15 @@
 source functions.inc.sh
 
 export IFS=","
-for CONTAINER_SHORT in ${CONTAINERS_MYSQL}; do
-  get_container_name "${CONTAINER_SHORT}"
+for POD in ${CONTAINERS_MYSQL}; do
+  get_container_name "${POD}"
   CONTAINER="${func_result}"
   if [[ "${CONTAINER}" != "" ]]; then
-    echo_prom_helper "Backing up MySQL ${CONTAINER_SHORT}"
+    echo_prom_helper "Backing up MySQL ${POD}"
   
     export DATABASES_STR=""
-    export SERVER_DIR="/tmp/${CONTAINER_SHORT}"
-    export FILE="${CONTAINER_SHORT}-${DATE}.sql"
+    export SERVER_DIR="/tmp/${POD}"
+    export FILE="${POD}-${DATE}.sql"
     export DESTINATION_FILE="${SERVER_DIR}/${FILE}.gz"
     export SQL_USER="root"
     export SQL_PASS=$(docker exec -i ${CONTAINER} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')

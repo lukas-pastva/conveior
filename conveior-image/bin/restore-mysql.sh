@@ -1,26 +1,23 @@
 #!/bin/bash
 source functions.inc.sh
 
-if [ -z "${CONTAINER_SHORT+xxx}" ]; then
-  read -p "Pod: " CONTAINER_SHORT
-  export CONTAINER_SHORT="${CONTAINER_SHORT}"
+if [ -z "${POD+xxx}" ]; then
+  read -p "Pod: " export POD
 fi
 
 if [ -z "${FILE_ZIP+xxx}" ]; then
-  read -p "Location of the zip file to be downloaded (example: bucket/dir/file.zip) " FILE_ZIP
-  export FILE_ZIP="${FILE_ZIP}"
+  read -p "Location of the zip file to be downloaded (example: bucket/dir/file.zip) " export FILE_ZIP
 fi
 
 if [ -z "${DROP_DBS+xxx}" ]; then
-  read -p "Drop all existing DBs ? (except system ones) (values: yes/no) " DROP_DBS
-  export DROP_DBS="${DROP_DBS}"
+  read -p "Drop all existing DBs ? (except system ones) (values: yes/no) " export DROP_DBS
 fi
 
 # actually backup, in case sth is horrifyingly wrong
-export CONTAINERS_MYSQL="${CONTAINER_SHORT}"
+export CONTAINERS_MYSQL="${POD}"
 backup-mysql.sh
 
-get_container_name "${CONTAINER_SHORT}"
+get_container_name "${POD}"
 CONTAINER="${func_result}"
 if [[ "${CONTAINER}" != "" ]]; then
   echo_prom_helper "Restoring: $FILE_ZIP"
