@@ -1,6 +1,10 @@
 #!/bin/bash
 source functions.inc.sh
 
+if [[ "${1}" != "" ]]; then
+  export CONTAINERS_MYSQL="${1}"
+fi
+
 export IFS=","
 for POD in ${CONTAINERS_MYSQL}; do
   get_container_name "${POD}"
