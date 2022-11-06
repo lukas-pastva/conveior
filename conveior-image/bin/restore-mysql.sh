@@ -2,15 +2,8 @@
 source functions.inc.sh
 
 if [ -z "${CONTAINER_SHORT+xxx}" ]; then
-  if [ -z "${NAMESPACE+xxx}" ]; then
-    read -p "Namespace " NAMESPACE
-    export NAMESPACE="${NAMESPACE}"
-  fi
-  if [ -z "${POD+xxx}" ]; then
-    read -p "Pod " POD
-    export POD="${POD}"
-  fi
-  export CONTAINER_SHORT="${NAMESPACE}_${POD}"
+  read -p "Pod: " CONTAINER_SHORT
+  export CONTAINER_SHORT="${CONTAINER_SHORT}"
 fi
 
 if [ -z "${FILE_ZIP+xxx}" ]; then
@@ -22,6 +15,10 @@ if [ -z "${DROP_DBS+xxx}" ]; then
   read -p "Drop all existing DBs ? (except system ones) (values: yes/no) " DROP_DBS
   export DROP_DBS="${DROP_DBS}"
 fi
+
+# actually backup, in case sth is horrifyingly wrong
+export CONTAINERS_MYSQL="${CONTAINER_SHORT}"
+backup-mysql.sh
 
 get_container_name "${CONTAINER_SHORT}"
 CONTAINER="${func_result}"

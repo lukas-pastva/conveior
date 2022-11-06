@@ -145,11 +145,7 @@ function generate_password() {
 
 function get_container_name {
   CONTAINER_SHORT=$1
-  # here I am getting shortest name of container, that is because containers han be in format "web, web-sql, web-sql-pma"
-  CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep -v _POD_ | grep "${CONTAINER_SHORT}" | awk '
-                     NR==1 || length<len {len=length; line=$0}
-                     END {print line}
-                   ')
+  CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep "k8s_${CONTAINER_SHORT}_${CONTAINER_SHORT}")
   if [[ "${CONTAINER}" == *"${CONTAINER_SHORT}"* ]]; then
     func_result="${CONTAINER}"
   else
