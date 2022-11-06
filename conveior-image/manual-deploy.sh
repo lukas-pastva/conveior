@@ -6,9 +6,9 @@ echo "This is to be used for manually deploying Agnet without a GitLab runner"
 
 . .env
 
-if [ -z "${BACKUP+xxx}" ]; then
-  read -p "Please input BACKUP (example: web:/data,web-2:/var/www/html) " BACKUP
-  export BACKUP="${BACKUP}"
+if [ -z "${BACKUP_FILES+xxx}" ]; then
+  read -p "Please input BACKUP_FILES (example: web:/data,web-2:/var/www/html) " BACKUP_FILES
+  export BACKUP_FILES="${BACKUP_FILES}"
 fi
 
 if [ -z "${CONTAINERS_MYSQL+xxx}" ]; then

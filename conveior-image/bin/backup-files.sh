@@ -2,7 +2,7 @@
 source functions.inc.sh
 
 export IFS=","
-for ITEM in ${BACKUP}; do
+for ITEM in ${BACKUP_FILES}; do
   echo_prom_helper "Backing up files $ITEM"
 
   export POD=$(echo ${ITEM} | awk -F":" '{print $1}')
