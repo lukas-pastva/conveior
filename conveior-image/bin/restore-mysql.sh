@@ -7,7 +7,7 @@ if [ -z "${POD+xxx}" ]; then
 fi
 
 if [ -z "${FILE_ZIP+xxx}" ]; then
-  read -p "Location of the zip file to be downloaded (example: bucket/dir/file.zip) " FILE_ZIP
+  read -p "Location of the zip file to be downloaded (example: dir/file.zip) " FILE_ZIP
   export FILE_ZIP=${FILE_ZIP}
 fi
 
@@ -23,28 +23,28 @@ if [[ "${CONTAINER}" != "" ]]; then
   # actually backup, in case sth is horrifyingly wrong
   bash backup-mysql.sh "${POD}"``
 
-  download_file "${FILE_ZIP}" "./restore/backup.zip"
-  mkdir -p ./restore && cd ./restore && unzip -qq backup.zip && rm backup.zip
+  mkdir -p /tmp/restore
+  download_file "${FILE_ZIP}" "/tmp/restore/backup.zip"
+  cd /tmp/restore && unzip -qq backup.zip && rm backup.zip
 
-  MYSQL_ROOT_PASSWORD=$(docker exec -i "${CONTAINER}" bash -c 'echo $MYSQL_ROOT_PASSWORD')
+  MYSQL_ROOT_PASSWORD=$(docker exec -i "${CONTAINER}" bash -c 'echo $MYSQL_ROOT_PASSWORD' 2>/dev/null)
 
   if [[ "${DROP_DBS}" == "yes" ]]; then
-    export DATABASE_LIST=$(echo 'show databases;' | docker exec -i "${CONTAINER}" bash -c "mysql -u root -p'${MYSQL_ROOT_PASSWORD}'" | grep -Fv -e 'Database' -e 'information_schema' -e 'mysql' -e 'performance_schema' -e 'sys' )
+    export DATABASE_LIST=$(echo 'show databases;' | docker exec -i "${CONTAINER}" bash -c "mysql -u root -p'${MYSQL_ROOT_PASSWORD}' 2>/dev/null" | grep -Fv -e 'Database' -e 'information_schema' -e 'mysql' -e 'performance_schema' -e 'sys' )
     export IFS=$'\n'
     for DATABASE_ITEM in $DATABASE_LIST;
     do
       echo_prom_helper "Dropping database ${DATABASE_ITEM}"
-      docker exec -i "${CONTAINER}" mysql -u root -p$MYSQL_ROOT_PASSWORD -e "drop database \`${DATABASE_ITEM}\`;"
+      docker exec -i "${CONTAINER}" mysql -u root -p$MYSQL_ROOT_PASSWORD -e "drop database \`${DATABASE_ITEM}\`;" 2>/dev/null
     done
   fi
 
-  cd ../
-  for BACKUP_FILE in ./restore/*
+  for BACKUP_FILE in /tmp/restore/*
   do
     echo_prom_helper "Importing $BACKUP_FILE SQL file"
-    docker exec -i "${CONTAINER}" mysql -u root -p$MYSQL_ROOT_PASSWORD < "${BACKUP_FILE}"
+    docker exec -i "${CONTAINER}" mysql -u root -p$MYSQL_ROOT_PASSWORD < "${BACKUP_FILE}" 2>/dev/null
   done
-  rm -R "./restore"
+  rm -R "/tmp/restore"
 fi
 
 
