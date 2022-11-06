@@ -12,10 +12,10 @@ function download_file {
   echo_prom_helper "Downloading ${1} into ${2}"
 
   if [ "${BUCKET_TYPE}" == "S3" ]; then
-      download_file_s3 $1 $2
+      download_file_s3 "$1" "$2"
   fi
   if [ "${BUCKET_TYPE}" == "GCP" ]; then
-      download_file_gcp $1 $2
+      download_file_gcp "$1" "$2"
   fi
 }
 

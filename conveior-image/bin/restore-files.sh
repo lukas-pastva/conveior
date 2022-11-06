@@ -1,9 +1,9 @@
 #!/bin/bash
 source functions.inc.sh
 
-if [ -z "${POD+xxx}" ]; then
-  read -p "Pod: " POD
-  export POD=${POD}
+if [ -z "${POD_SHORT+xxx}" ]; then
+  read -p "Pod: " POD_SHORT
+  export POD_SHORT=${POD_SHORT}
 fi
 if [ -z "${FILE_ZIP+xxx}" ]; then
   read -p "Location of the zip file to be downloaded (example: dir/file.zip): " FILE_ZIP
@@ -18,18 +18,22 @@ if [ -z "${CLEANUP+xxx}" ]; then
   export CLEANUP=${CLEANUP}
 fi
 
-mkdir -p "{/tmp/restore,/tmp/restore-unzipped}"
+get_pod_name "${POD_SHORT}"
+POD="${func_result}"
+if [[ "${POD}" != "" ]]; then
+  mkdir -p {/tmp/restore,/tmp/restore-unzipped}
 
-download_file "${FILE}" "/tmp/restore/restore.zip"
-unzip -qq "/tmp/restore/restore.zip" -d "/tmp/restore-unzipped" && rm -rf "/tmp/restore"
+  download_file "${FILE_ZIP}" "/tmp/restore/restore.zip"
 
-if [[ "${CLEANUP}" == "yes" ]]; then
-  echo_prom_helper "Cleaning up"
-  docker exec -i sys-backupper-${DEST_DIR} bash -c "rm -R /tmp/${DEST_DIR}/*"
+  unzip -qq "/tmp/restore/restore.zip" -d "/tmp/restore-unzipped" && rm -rf "/tmp/restore"
+
+  if [[ "${CLEANUP}" == "yes" ]]; then
+    echo_prom_helper "Cleaning up"
+    docker exec -i "${POD}" bash -c "find ${DEST_DIR} -mindepth 1 -delete"
+  fi
+
+  echo_prom_helper "Copying files"
+  docker cp "/tmp/restore-unzipped/." "${POD}:${DEST_DIR}/"
+
+  rm -R "/tmp/restore-unzipped"
 fi
-
-echo_prom_helper "Copying files"
-docker cp /tmp/restore-unzipped/ sys-backupper-${DEST_DIR}:/tmp/${DEST_DIR}
-docker exec -i sys-backupper-${DEST_DIR} bash -c "mv /tmp/${DEST_DIR}/restore-unzipped/* /tmp/${DEST_DIR}"
-
-rm -R "/tmp/restore"
