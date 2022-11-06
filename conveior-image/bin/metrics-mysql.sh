@@ -1,31 +1,58 @@
 #!/bin/bash
 source functions.inc.sh
 
+#export SQL_QUERIES_JSON=${func_result}
 export IFS=","
-for POD in ${CONTAINERS_MYSQL}; do
-  get_container_name "${POD}"
-  CONTAINER="${func_result}"
-  if [[ "${CONTAINER}" != "" ]]; then
-    echo_prom_helper "Sending info about MySQL for ${CONTAINER}"
+for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
 
-    export MYSQL_PASS=$(docker exec -i "${CONTAINER}" bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
-    export MYSQL_USER="root"
-    export QUERY='SHOW DATABASES WHERE `Database` <> "mysql" and `Database` <> "information_schema" and `Database` <> "performance_schema" and `Database` <> "sys"'
-    export DATABASE_LIST=$(echo ${QUERY} | docker exec -i ${CONTAINER} bash -c "mysql -u${MYSQL_USER} -p'${MYSQL_PASS}'" 2> /dev/null | tail -n+2 )
+  echo_prom_helper "Sending queries from MySQL for ${CONTAINER_NAME}"
 
-    export IFS=$'\n'
-    for DATABASE in ${DATABASE_LIST}; do
-     export QUERY2="SELECT TABLE_NAME AS name, (data_length + index_length) AS value FROM information_schema.TABLES WHERE information_schema.TABLES.table_schema = '${DATABASE}' and information_schema.TABLES.Table_Type = 'BASE TABLE'"
-     export TABLE_SIZE_LIST=$(echo ${QUERY2} | docker exec -i ${CONTAINER} bash -c "mysql -u${MYSQL_USER} -p'${MYSQL_PASS}'" 2> /dev/null | tail -n+2 )
+  export SQL_PASS=$(docker exec -i ${CONTAINER_NAME} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
 
-      export IFS=$'\n'
-      for TABLE_SIZE in ${TABLE_SIZE_LIST}; do
-        export SIZE=$(echo ${TABLE_SIZE} | awk '{print $2}')
-        export TABLE=$(echo ${TABLE_SIZE} | awk '{print $1}')
-        PROMETHEUS_DATA+=$'\n'"conveior_mysql_table_size{name=${POD}/${DATABASE}/${TABLE}} ${SIZE}"
-      done
-    done
-  fi
+  export SQL_USER="root"
+  export QUERY_LIST=$(echo "${SQL_QUERIES_JSON}" | jq -r ".[] | select(.container==\"${CONTAINER_NAME}\") | .query")
+  export IFS=$';'
+  for QUERY in ${QUERY_LIST}; do
+    QUERY=$(echo "${QUERY}" | tr '\r' ' ' | tr '\n' ' ')
+    if [[ "${QUERY^^}" != *"DROP"* ]]; then
+      if [[ "${QUERY^^}" != *"UPDATE"* ]]; then
+        if [[ "${QUERY^^}" != *"TRUNCATE"* ]]; then
+          if [[ "${QUERY^^}" != *"DELETE"* ]]; then
+            if [[ "${QUERY^^}" != *"ALTER"* ]]; then
+              if [[ "${QUERY^^}" != *"INSERT"* ]]; then
+                echo_prom_helper "executing query: ${QUERY}"
+
+                export QUERY_RESULT=$(echo ${QUERY} | docker exec -i ${CONTAINER_NAME} mysql -u${SQL_USER} -p${SQL_PASS})
+                export PROMETHEUS_DATA=""
+                export i=0
+                export IFS=$'\n'
+                for QUERY_LINE in ${QUERY_RESULT}; do
+                  if [[ "${i}" == "0" ]]; then
+                    export QUERY_COLUMNS=${QUERY_LINE}
+                  else
+                    export API=$(echo ${QUERY_LINE} | awk -F'\t' '{print $1}')
+                    export NAME=$(echo ${QUERY_LINE} | awk -F'\t' '{print $2}')
+                    export VALUE=$(echo ${QUERY_LINE} | awk -F'\t' '{print $3}')
+
+                    if [ -n "$VALUE" ]; then
+                      if [[ "$VALUE" != "NULL" ]]; then
+                        VALUE=$(echo ${VALUE} | jq '.|ceil')
+                        if [[ $VALUE =~ ^-?[0-9]+$ ]]; then
+                          # if [ "$VALUE" -gt 0 ]; then
+                          PROMETHEUS_DATA="${PROMETHEUS_DATA}{\"chart\":\"${API}\",\"name\":\"${NAME}\",\"value\":${VALUE}},";
+                          # fi
+                        fi
+                      fi
+                    fi
+                  fi
+                  i=$((i + 1))
+                done
+                echo "${PROMETHEUS_DATA}"
+              fi
+            fi
+          fi
+        fi
+      fi
+    fi
+  done
 done
-
-echo "${PROMETHEUS_DATA}"

@@ -34,8 +34,6 @@ RUN chmod -R +x /usr/local/bin
 
 RUN (crontab -l ; echo "0 19 * * * /usr/local/bin/sys-cron24.sh >> /var/log/cron.log 2>&1") | crontab
 
-#(crontab -l ; echo "*/5 * * * * /usr/local/bin/sys-cron.sh >> /var/log/cron.log 2>&1") | crontab && \
-
 WORKDIR /usr/local/bin
 EXPOSE 80
 USER root

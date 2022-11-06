@@ -5,14 +5,12 @@ if [ -z "${POD+xxx}" ]; then
   read -p "Pod: " POD
   export POD=${POD}
 fi
-
 if [ -z "${FILE_ZIP+xxx}" ]; then
-  read -p "Location of the zip file to be downloaded (example: dir/file.zip) " FILE_ZIP
+  read -p "Location of the zip file to be downloaded (example: dir/file.zip): " FILE_ZIP
   export FILE_ZIP=${FILE_ZIP}
 fi
-
 if [ -z "${DROP_DBS+xxx}" ]; then
-  read -p "Drop all existing DBs ? (except system ones) (values: yes/no) " DROP_DBS
+  read -p "Drop all existing DBs ? (except system ones) (values: yes/no): " DROP_DBS
   export DROP_DBS=${DROP_DBS}
 fi
 
@@ -20,8 +18,8 @@ get_container_name "${POD}"
 CONTAINER="${func_result}"
 if [[ "${CONTAINER}" != "" ]]; then
 
-  # actually backup, in case sth is horrifyingly wrong
-  bash backup-mysql.sh "${POD}"``
+  # perform backup, in case sth is horrifyingly wrong
+  bash backup-mysql.sh "${POD}"
 
   mkdir -p /tmp/restore
   download_file "${FILE_ZIP}" "/tmp/restore/backup.zip"
@@ -45,6 +43,5 @@ if [[ "${CONTAINER}" != "" ]]; then
     docker exec -i "${CONTAINER}" mysql -u root -p$MYSQL_ROOT_PASSWORD < "${BACKUP_FILE}" 2>/dev/null
   done
   rm -R "/tmp/restore"
+  echo_prom_helper "DONE"
 fi
-
-

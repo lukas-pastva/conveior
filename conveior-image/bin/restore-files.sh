@@ -1,0 +1,35 @@
+#!/bin/bash
+source functions.inc.sh
+
+if [ -z "${POD+xxx}" ]; then
+  read -p "Pod: " POD
+  export POD=${POD}
+fi
+if [ -z "${FILE_ZIP+xxx}" ]; then
+  read -p "Location of the zip file to be downloaded (example: dir/file.zip): " FILE_ZIP
+  export FILE_ZIP=${FILE_ZIP}
+fi
+if [ -z "${DEST_DIR+xxx}" ]; then
+  read -p "Destination directory (example: /var/www/html): " DEST_DIR
+  export DEST_DIR=${DEST_DIR}
+fi
+if [ -z "${CLEANUP+xxx}" ]; then
+  read -p "Cleanup destination directory? (values: yes/no): " CLEANUP
+  export CLEANUP=${CLEANUP}
+fi
+
+mkdir -p "{/tmp/restore,/tmp/restore-unzipped}"
+
+download_file "${FILE}" "/tmp/restore/restore.zip"
+unzip -qq "/tmp/restore/restore.zip" -d "/tmp/restore-unzipped" && rm -rf "/tmp/restore"
+
+if [[ "${CLEANUP}" == "yes" ]]; then
+  echo_prom_helper "Cleaning up"
+  docker exec -i sys-backupper-${DEST_DIR} bash -c "rm -R /tmp/${DEST_DIR}/*"
+fi
+
+echo_prom_helper "Copying files"
+docker cp /tmp/restore-unzipped/ sys-backupper-${DEST_DIR}:/tmp/${DEST_DIR}
+docker exec -i sys-backupper-${DEST_DIR} bash -c "mv /tmp/${DEST_DIR}/restore-unzipped/* /tmp/${DEST_DIR}"
+
+rm -R "/tmp/restore"

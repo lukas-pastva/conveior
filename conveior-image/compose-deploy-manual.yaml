@@ -7,12 +7,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "https://admin:${API_PASS}@${LOKI_URL}/loki/api/v1/push"
-        loki-retries: 5
-        loki-batch-size: 400
     environment:
       API_PASS: "${API_PASS}"
       API_USER: "admin"

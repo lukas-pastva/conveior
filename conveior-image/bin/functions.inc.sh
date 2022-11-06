@@ -27,7 +27,7 @@ function download_file_s3 {
   resource="/${BUCKET_NAME}/${FILE_S3}"
   stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-  curl -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" -o "${FILENAME}"
+  curl -s -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" -o "${FILENAME}"
 }
 
 function download_file_gcp {
@@ -64,81 +64,7 @@ function upload_file_s3 () {
   resource="/${BUCKET_NAME}/${FILE_S3}"
   stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-  curl -X PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
-}
-
-function api_get_json () {
-  func_result=$(curl -sX GET "$1" -u "admin:${API_PASS}" )
-}
-
-function restore_files() {
-#  get_upload_credentials
-  export GCP_DIR=$1
-  export DATE=$2
-  export CONTAINER=$3
-  export DESTINATION=$4
-
-  # we need to find the directory with latest date
-  if [ ${DATE} == "latest" ]; then
-    export DATE_DIR=$(curl -s --noproxy '*' -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME/o \
-        |  jq '.items' | jq '.[] | select(.size!="0")' | jq -r '.name' \
-        | grep "$GCP_DIR/" | sort -r | head -1 | awk -F "/" '{print $(NF-1)}' || true )
-  else
-      DATE_DIR=$DATE
-  fi
-
-  # now we actually will download the files
-  mkdir -p ./restore
-  mkdir -p ./restore-unzipped
-  export IFS=$'\n'
-  curl -s --noproxy '*' \
-        -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-        https://storage.googleapis.com/storage/v1/b/$BUCKET_NAME/o \
-        | jq '.items' | jq '.[] | select(.size!="0")' | jq -r '.name' \
-        | grep "$GCP_DIR/" | while read LINE_GCP_FILE ; do
-        if [[ "$LINE_GCP_FILE" == *"$GCP_DIR/$DATE_DIR"* ]]; then
-          # actually download the file
-          export FILENAME=$(echo $LINE_GCP_FILE | awk -F "/" '{print $NF}')
-          curl --noproxy '*' -H "Authorization: Bearer ${OAUTH2_TOKEN}" \
-                "https://storage.googleapis.com/$BUCKET_NAME/$LINE_GCP_FILE" \
-                -o ./restore/${FILENAME}
-        fi
-  done
-
-  # all files are downloaded, if more, lets concat, if none, lets exit
-  if [ $(ls ./restore | wc -l) -eq 0 ]; then
-    echo_prom_helper "There are no files on GCP bucket"
-    export restore_files="false"
-  else
-    if [ $(ls ./restore | wc -l) -ge 2 ]; then
-      echo_prom_helper "Multiple files concatenating"
-      cat ./restore/* > ./restore/restore.zip
-    else
-      mv ./restore/$(ls ./restore) ./restore/restore.zip
-    fi
-    # now unzip the file
-    unzip ./restore/restore.zip -d ./restore-unzipped
-
-    echo_prom_helper "Files fount:"
-    ls -lart ./restore-unzipped/*
-
-    if [  $(ls ./restore-unzipped | wc -l) -ge 1 ]; then
-        echo_prom_helper "Copying files into $CONTAINER:$DESTINATION"
-        docker cp ./restore-unzipped/. $CONTAINER:$DESTINATION
-    else
-      echo_prom_helper "Was not able to restore certificates"
-      export restore_files="false"
-    fi
-
-    rm -R "./restore"
-    rm -R "./restore-unzipped"
-  fi
-
-}
-
-function generate_password() {
-  export generate_password=$(cat /proc/sys/kernel/random/uuid | sed 's/[-]//g' | head -c 20; echo;)
+  curl -sX PUT -T "${FILENAME}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
 }
 
 function get_container_name {
