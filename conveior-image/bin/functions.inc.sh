@@ -72,7 +72,7 @@ ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
 
 function get_pod_name {
   POD_SHORT=$1
-  POD=$(docker ps -f status=running --format "{{.Names}}" | grep "k8s_${POD_SHORT}_${POD_SHORT}")
+  POD=$(docker ps -f status=running --format "{{.Names}}" | grep "k8s_${POD_SHORT}_${POD_SHORT}" || true)
   if [[ "${POD}" == *"${POD_SHORT}"* ]]; then
     func_result="${POD}"
   else
