@@ -11,9 +11,9 @@ if [ -z "${BACKUP_FILES+xxx}" ]; then
   export BACKUP_FILES="${BACKUP_FILES}"
 fi
 
-if [ -z "${CONTAINERS_MYSQL+xxx}" ]; then
-  read -p "Please input CONTAINERS_MYSQL (example: mysql,mysql-2) " CONTAINERS_MYSQL
-  export CONTAINERS_MYSQL="${CONTAINERS_MYSQL}"
+if [ -z "${PODS_MYSQL+xxx}" ]; then
+  read -p "Please input PODS_MYSQL (example: mysql,mysql-2) " PODS_MYSQL
+  export PODS_MYSQL="${PODS_MYSQL}"
 fi
 
 if [ -z "${BUCKET_TYPE+xxx}" ]; then

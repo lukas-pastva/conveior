@@ -3,14 +3,14 @@ source functions.inc.sh
 
 #export SQL_QUERIES_JSON=${func_result}
 export IFS=","
-for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
+for POD_NAME in ${PODS_MYSQL}; do
 
-  echo_prom_helper "Sending queries from MySQL for ${CONTAINER_NAME}"
+  echo_prom_helper "Sending queries from MySQL for ${POD_NAME}"
 
-  export SQL_PASS=$(docker exec -i ${CONTAINER_NAME} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
+  export SQL_PASS=$(docker exec -i ${POD_NAME} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
 
   export SQL_USER="root"
-  export QUERY_LIST=$(echo "${SQL_QUERIES_JSON}" | jq -r ".[] | select(.container==\"${CONTAINER_NAME}\") | .query")
+  export QUERY_LIST=$(echo "${SQL_QUERIES_JSON}" | jq -r ".[] | select(.container==\"${POD_NAME}\") | .query")
   export IFS=$';'
   for QUERY in ${QUERY_LIST}; do
     QUERY=$(echo "${QUERY}" | tr '\r' ' ' | tr '\n' ' ')
@@ -22,7 +22,7 @@ for CONTAINER_NAME in ${CONTAINERS_MYSQL}; do
               if [[ "${QUERY^^}" != *"INSERT"* ]]; then
                 echo_prom_helper "executing query: ${QUERY}"
 
-                export QUERY_RESULT=$(echo ${QUERY} | docker exec -i ${CONTAINER_NAME} mysql -u${SQL_USER} -p${SQL_PASS})
+                export QUERY_RESULT=$(echo ${QUERY} | docker exec -i "${POD_NAME}" mysql -u${SQL_USER} -p${SQL_PASS})
                 export PROMETHEUS_DATA=""
                 export i=0
                 export IFS=$'\n'

@@ -8,7 +8,7 @@ fi
 export IFS=","
 for POD in ${PODS_MYSQL}; do
 
-  get_container_name "${POD}"
+  get_pod_name "${POD}"
   POD="${func_result}"
   if [[ "${POD}" != "" ]]; then
     echo_prom_helper "Backing up ${POD}"

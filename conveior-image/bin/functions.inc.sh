@@ -67,15 +67,14 @@ function upload_file_s3 () {
 ${contentType}
 ${dateValue}
 ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
-  echo "curl -sX PUT -T \"${ZIP_FILE}\" -H \"Date: ${dateValue}\" -H \"Content-Type: ${contentType}\" -H \"Authorization: AWS ${S3_KEY}:${signature}\" \"${S3_URL}/${BUCKET_NAME}/${FILE_S3}\""
   curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
 }
 
-function get_container_name {
-  POD=$1
-  CONTAINER=$(docker ps -f status=running --format "{{.Names}}" | grep "k8s_${POD}_${POD}")
-  if [[ "${CONTAINER}" == *"${POD}"* ]]; then
-    func_result="${CONTAINER}"
+function get_pod_name {
+  POD_SHORT=$1
+  POD=$(docker ps -f status=running --format "{{.Names}}" | grep "k8s_${POD_SHORT}_${POD_SHORT}")
+  if [[ "${POD}" == *"${POD_SHORT}"* ]]; then
+    func_result="${POD}"
   else
     func_result=""
   fi
