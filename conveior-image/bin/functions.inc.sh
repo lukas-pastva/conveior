@@ -79,3 +79,7 @@ function get_pod_name {
     func_result=""
   fi
 }
+
+function get_yaml_data {
+#  yq e '.metrics.pods_mysql.[]'  data.yaml
+}

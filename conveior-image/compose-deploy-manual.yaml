@@ -8,13 +8,13 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      API_PASS: "${API_PASS}"
-      API_USER: "admin"
       BACKUP_FILES: "${BACKUP_FILES}"
-      BACKUP_CERTIFICATES: "${BACKUP_CERTIFICATES}"
       PODS_MYSQL: "${PODS_MYSQL}"
       BUCKET_TYPE: "${BUCKET_TYPE}"
       BUCKET_NAME: "${BUCKET_NAME}"
+      S3_KEY: "${S3_KEY}"
+      S3_SECRET: "${S3_SECRET}"
+      S3_URL: "${S3_URL}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: "always"
