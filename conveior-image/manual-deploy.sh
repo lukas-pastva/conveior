@@ -36,6 +36,11 @@ if [ -z "${S3_SECRET+xxx}" ]; then
   export S3_SECRET="${S3_SECRET}"
 fi
 
+if [ -z "${S3_URL+xxx}" ]; then
+  read -p "Please input S3_URL (example: *****) " S3_URL
+  export S3_URL="${S3_URL}"
+fi
+
 docker-compose -f compose-deploy-manual.yaml down || true
 docker-compose -f compose-deploy-manual.yaml build
 docker-compose -f compose-deploy-manual.yaml up -d
