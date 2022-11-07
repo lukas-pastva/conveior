@@ -81,5 +81,6 @@ function get_pod_name {
 }
 
 function get_yaml_data {
-#  yq e '.metrics.pods_mysql.[]'  data.yaml
+  #  yq e '.metrics.pods_mysql.[]'  data.yaml
+  echo ""
 }
