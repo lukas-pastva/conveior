@@ -1,0 +1,134 @@
+{{- range $item := .Values.pods }}
+---
+apiVersion: apps/v1
+kind: {{ $.Values.type }}
+metadata:
+  name: {{ $item.name }}
+  labels:
+    app: {{ $item.name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  {{ if eq $.Values.type "Deployment" }}replicas: {{ $item.replicaCount | default 1 }}{{- end }}
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: {{ $item.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $item.name }}
+    spec:
+      {{- if $.Values.nodeName }}
+      nodeName: {{ $.Values.nodeName | quote }}
+      {{- end }}
+      containers:
+        - name: {{ $item.name }}
+          image: "{{ $item.repo }}"
+          {{- if $item.ports }}
+          ports:
+          {{- range $itemPort := $item.ports }}
+            - name: {{ $itemPort.name }}
+              containerPort: {{ $itemPort.port }}
+              protocol: TCP
+          {{- end }}
+          {{- end }}
+          {{ if $item.resourcesEnabled -}}
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          {{- end }}
+          {{ if $item.probesEnabled -}}
+          livenessProbe:
+            httpGet:
+              path: "/health"
+              port: http
+              scheme: "HTTP"
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: "/health"
+              port: http
+              scheme: "HTTP"
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          {{- end }}
+          env:
+{{/*          {{- range $item := .Values.pods }}*/}}
+{{/*            ---*/}}
+{{/*          {{- end  }}*/}}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: BACKUP_FILES
+              valueFrom:
+                configMapKeyRef:
+                  name: conveior
+                  key: CONVEIOR_BACKUP_FILES
+            - name: PODS_MYSQL
+              valueFrom:
+                configMapKeyRef:
+                  name: conveior
+                  key: CONVEIOR_PODS_MYSQL
+            - name: BUCKET_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: conveior
+                  key: CONVEIOR_BUCKET_TYPE
+            - name: BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: conveior
+                  key: CONVEIOR_BUCKET_NAME
+            - name: S3_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: conveior
+                  key: CONVEIOR_S3_KEY
+            - name: S3_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: conveior
+                  key: CONVEIOR_S3_SECRET
+            - name: S3_URL
+              valueFrom:
+                secretKeyRef:
+                  name: conveior
+                  key: CONVEIOR_S3_URL
+      {{- if $item.volumes }}
+          volumeMounts:
+          {{- range $itemVolumes := $item.volumes }}
+            - name: {{ $itemVolumes.name }}
+              mountPath: {{ $itemVolumes.mountPath | quote }}
+              readOnly: {{ $itemVolumes.readOnly | default false }}
+          {{- if $itemVolumes.args }}
+          args:
+            - {{ $itemVolumes.args | quote }}
+          {{- end }}
+          {{- end }}
+      volumes:
+      {{- range $itemVolumes := $item.volumes }}
+      - name: {{ $itemVolumes.name }}
+        {{ if $itemVolumes.hostPath }}
+        hostPath:
+          path: {{ $itemVolumes.hostPath | quote}}
+        {{ else }}
+        persistentVolumeClaim:
+          claimName: {{ $itemVolumes.name }}
+        {{- end }}
+      {{- end }}
+      {{- end }}
+      imagePullSecrets:
+        - name: secrets-registry-gitlab
+{{- end }}

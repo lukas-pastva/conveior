@@ -1,0 +1,23 @@
+{{- range $item := .Values.pods }}
+{{- range $itemPort := $item.ports }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ $item.name }}
+  name: {{ $item.name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  ports:
+    - name: {{ $itemPort.name }}
+      port: {{ $itemPort.port }}
+      protocol: TCP
+      targetPort: {{ $itemPort.port }}
+  selector:
+    app: {{ $item.name }}
+  type: ClusterIP
+status:
+  loadBalancer: {}
+{{- end }}
+{{- end }}

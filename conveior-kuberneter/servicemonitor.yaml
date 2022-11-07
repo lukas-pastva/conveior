@@ -1,0 +1,18 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    release: "prom-stack"
+  name: conveior
+  namespace: monitoring
+spec:
+  endpoints:
+    - path: /actuator/prometheus
+      port: http
+      scheme: http
+      interval: 60s
+  jobLabel: conveior
+  selector:
+    matchLabels:
+      app: conveior

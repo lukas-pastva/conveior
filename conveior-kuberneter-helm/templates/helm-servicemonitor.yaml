@@ -1,0 +1,22 @@
+{{- range $item := .Values.pods }}
+{{- if $item.serviceMonitorEnabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    release: "prom-stack"
+  name: {{ $item.name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  endpoints:
+    - path: /actuator/prometheus
+      port: http
+      scheme: http
+      interval: 60s
+  jobLabel: {{ $item.name }}
+  selector:
+    matchLabels:
+      app: {{ $item.name }}
+{{- end }}
+{{- end }}
