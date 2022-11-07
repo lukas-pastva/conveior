@@ -8,7 +8,7 @@ metadata:
   namespace: monitoring
 spec:
   endpoints:
-    - path: /actuator/prometheus
+    - path: /metrics
       port: http
       scheme: http
       interval: 60s

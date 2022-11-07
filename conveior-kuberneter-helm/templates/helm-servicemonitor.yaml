@@ -10,7 +10,7 @@ metadata:
   namespace: {{ $.Values.namespace }}
 spec:
   endpoints:
-    - path: /actuator/prometheus
+    - path: /metrics
       port: http
       scheme: http
       interval: 60s
