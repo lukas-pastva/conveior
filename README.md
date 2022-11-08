@@ -1,13 +1,41 @@
-Conveior.io
+Welcome to conveior.io
+=============================================
+
+
+About conveior.io
 ==================
 
 Conveior.io is a DevOps Docker+Kubernetes tool
 
-- Opensource
-- Backup and restore
-- Metrics
+TLDR: Do you need out of box lightweight solution to back up all of your DB and Stateful Pods? Even Docker containers? Well conveior will convey the backups for You!
 
-More info at https://conveior.io
+- Opensource
+- Backup and restore Docker containers or k8s pods (MySQL, Files)
+- Custom SQL Metrics (YAML defined custom SQL queries exposing Prometheus metrics)
+- https://github.com/lukas-pastva/conveior
+- https://hub.docker.com/repository/docker/lukaspastva/conveior
+
+
+Installation
+==================
+
+Kubernetes Operator
+- https://github.com/lukas-pastva/conveior/tree/main/installation-operator
+- Install the operator via HELM chart and use CRDs in convinient way
+
+HELM installation
+- https://github.com/lukas-pastva/conveior/tree/main/installation-helm
+- There is a HELM chart in conveior repo. Just run it as you would normally do.
+- The chart will be soon uploaded to global helm registry
+
+Standard Kubernetes installation
+- https://github.com/lukas-pastva/conveior/tree/main/installation-kubernetes
+- There are static Kubernetes manifests that will deploy conveior into daemon sets.
+- Also it will create ServiceMonitor that will be scraped by Prometheus.
+
+Docker installation
+- https://github.com/lukas-pastva/conveior/tree/main/installation-docker
+- In directory conveior-docker there is docker-compose file and bash file to help you installing conveior on your docker server.
 
 Contact
 ==================
@@ -18,30 +46,7 @@ Contact
 
 ```mermaid
 erDiagram
-    Conveior }|..|{ PROMETHEUS : monitor-HW
+    Conveior }|..|{ PROMETHEUS : prometheus-metrics
     Conveior }|..|{ S3-BUCKET : push-backups
-    Conveior }|..|{ S3-BUCKET : restore-backups
-    Conveior }|..|{ YAML : monitor-bussiness
+    Conveior }|..|{ S3_BUCKET : restore-backups
 ```
-
-
-### how to S3 PUT
-```
-contentType="application/x-compressed-tar"
-dateValue=`date -R`
-resource="/${BUCKET_NAME}/${FILE_S3}"
-stringToSign="PUT\n\n${contentType}\n${dateValue}\n${resource}"
-signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-curl -X PUT -T "${FILE_S3}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "https://eu2.contabostorage.com/${BUCKET_NAME}/${FILE_S3}"
-```
-
-### how to S3 GET
-```
-contentType="application/x-compressed-tar"
-dateValue=`date -R`
-resource="/${BUCKET_NAME}/${FILE_S3}"
-stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
-signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-curl -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "https://eu2.contabostorage.com/${BUCKET_NAME}/${FILE_S3}"
-```
-
