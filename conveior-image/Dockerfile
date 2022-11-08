@@ -15,10 +15,13 @@ RUN apt-get update -qq && \
     procps \
     vim \
     unzip \
+    wget \
     zip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && \
+    chmod a+x /usr/local/bin/yq
 
 RUN mkdir -p /var/log /usr/share/nginx/logs && \
     touch /var/log/cron.log
