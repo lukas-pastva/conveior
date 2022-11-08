@@ -41,4 +41,9 @@ if [ -z "${S3_URL+xxx}" ]; then
   export S3_URL="${S3_URL}"
 fi
 
+if [ -z "${CONVEIOR_CONFIG+xxx}" ]; then
+  read -p "Please input CONVEIOR_CONFIG (example: yaml contents) " CONVEIOR_CONFIG
+  export CONVEIOR_CONFIG="${CONVEIOR_CONFIG}"
+fi
+
 docker-compose -f compose-deploy.yaml up -d

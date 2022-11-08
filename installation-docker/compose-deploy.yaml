@@ -13,5 +13,6 @@ services:
       S3_KEY: "${S3_KEY}"
       S3_SECRET: "${S3_SECRET}"
       S3_URL: "${S3_URL}"
+      CONVEIOR_CONFIG: "${CONVEIOR_CONFIG}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
