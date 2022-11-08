@@ -4,9 +4,7 @@ services:
 
   conveior:
     container_name: "conveior"
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: "lukaspastva/conveior:0.1.1"
     environment:
       BACKUP_FILES: "${BACKUP_FILES}"
       PODS_MYSQL: "${PODS_MYSQL}"
@@ -17,4 +15,3 @@ services:
       S3_URL: "${S3_URL}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    restart: "always"

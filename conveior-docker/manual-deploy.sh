@@ -2,9 +2,9 @@
 
 set -e
 
-echo "This is to be used for manually deploying Agnet without a GitLab runner"
+echo "Manually deploying Conveior into Docker."
 
-. .env
+. .env || true 2>/dev/null
 
 if [ -z "${BACKUP_FILES+xxx}" ]; then
   read -p "Please input BACKUP_FILES (example: web:/data,web-2:/var/www/html) " BACKUP_FILES
@@ -41,6 +41,4 @@ if [ -z "${S3_URL+xxx}" ]; then
   export S3_URL="${S3_URL}"
 fi
 
-docker-compose -f compose-deploy-manual.yaml down || true
-docker-compose -f compose-deploy-manual.yaml build
-docker-compose -f compose-deploy-manual.yaml up -d
+docker-compose -f compose-deploy.yaml up -d
