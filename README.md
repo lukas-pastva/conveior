@@ -37,6 +37,12 @@ Docker installation
 - https://github.com/lukas-pastva/conveior/tree/main/installation-docker
 - In directory conveior-docker there is docker-compose file and bash file to help you installing conveior on your docker server.
 
+
+License
+==================
+- This is fully OpenSource tool. Do whatever You want with it :-)
+- Apache License, Version 2.0, January 2004
+
 Contact
 ==================
 
