@@ -2,7 +2,7 @@ Welcome to conveior.io
 =============================================
 
 
-About conveior.io
+About Conveior
 ==================
 
 Conveior.io is a DevOps Docker+Kubernetes tool
