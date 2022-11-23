@@ -81,6 +81,6 @@ function get_pod_name {
 }
 
 function get_yaml_data {
-  yq e '.metrics.pods_mysql.[]' $CONVEIOR_CONFIG
+  yq e '.metrics.pods_mysql.[]' /home/conveior-config.yaml
   echo ""
 }
