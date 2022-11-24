@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-export EPOCH=$(date +%s)
-export DATE=$(date +"%Y-%m-%dT%H:%M:%SZ")
-conveior_load_configuration
-
 function echo_prom_helper {
   echo "# HELP $1"
 }
@@ -85,3 +81,8 @@ function conveior_load_configuration {
   export BUCKET_TYPE=$(yq e '.bucket_type' /home/conveior-config.yaml)
   export BUCKET_NAME=$(yq e '.bucket_name' /home/conveior-config.yaml)
 }
+
+
+export EPOCH=$(date +%s)
+export DATE=$(date +"%Y-%m-%dT%H:%M:%SZ")
+conveior_load_configuration
