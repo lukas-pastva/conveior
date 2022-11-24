@@ -4,16 +4,11 @@ services:
 
   conveior:
     container_name: "conveior"
-    image: "lukaspastva/conveior:0.1.1"
+    image: "lukaspastva/conveior:latest"
     environment:
-      BACKUP_FILES: "${BACKUP_FILES}"
-      PODS_MYSQL: "${PODS_MYSQL}"
-      BUCKET_TYPE: "${BUCKET_TYPE}"
-      BUCKET_NAME: "${BUCKET_NAME}"
       S3_KEY: "${S3_KEY}"
       S3_SECRET: "${S3_SECRET}"
       S3_URL: "${S3_URL}"
-      CONVEIOR_CONFIG: "${CONVEIOR_CONFIG}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - conveior-config.yaml:/home/conveior-config.yaml
