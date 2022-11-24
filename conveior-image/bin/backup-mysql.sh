@@ -41,4 +41,4 @@ do
       rm "${ZIP_FILE}"
     fi
   fi
-done < <(yq e '.backups.dbs_mysql.[].name' /home/conveior-config.yaml)
+done < <(yq e '.conveior-config.backups.dbs_mysql.[].name' /home/conveior-config.yaml)

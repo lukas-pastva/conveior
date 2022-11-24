@@ -12,7 +12,7 @@ do
 
     while read QUERY_NAME;
     do
-      QUERY=$(yq e ".metrics.pods_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .0.queries | with_entries(select(.value.name == \"$QUERY_NAME\" )) | .[].query" /home/conveior-config.yaml)
+      QUERY=$(yq e ".conveior-config.metrics.pods_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .0.queries | with_entries(select(.value.name == \"$QUERY_NAME\" )) | .[].query" /home/conveior-config.yaml)
       if [[ "${QUERY^^}" != *"DROP"* ]]; then
         if [[ "${QUERY^^}" != *"UPDATE"* ]]; then
           if [[ "${QUERY^^}" != *"TRUNCATE"* ]]; then
@@ -37,6 +37,6 @@ do
           fi
         fi
       fi
-    done < <(yq e ".metrics.pods_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .0.queries.[].name" /home/conveior-config.yaml)
+    done < <(yq e ".conveior-config.metrics.pods_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .0.queries.[].name" /home/conveior-config.yaml)
   fi
-done < <(yq e '.metrics.pods_mysql.[].name' /home/conveior-config.yaml)
+done < <(yq e '.conveior-config.metrics.pods_mysql.[].name' /home/conveior-config.yaml)

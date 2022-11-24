@@ -8,7 +8,7 @@ do
   if [[ "${POD}" != "" ]]; then
     echo_prom_helper "Backing up $ITEM"
 
-    export POD_PATH=$(yq e ".backups.files | with_entries(select(.value.name == \"$POD_SHORT\")) | .0.path" /home/conveior-config.yaml)
+    export POD_PATH=$(yq e ".conveior-config.backups.files | with_entries(select(.value.name == \"$POD_SHORT\")) | .0.path" /home/conveior-config.yaml)
     export SERVER_DIR="/tmp/${POD_SHORT}"
     export FILE="${POD_SHORT}-${DATE}"
     export ZIP_FILE_ONLY="${FILE}.zip"
@@ -28,4 +28,4 @@ do
       echo_prom_helper "Empty directory ${POD_PATH}, nothing to backup"
     fi
   fi
-done < <(yq e '.backups.files.[].name' /home/conveior-config.yaml)
+done < <(yq e '.conveior-config.backups.files.[].name' /home/conveior-config.yaml)

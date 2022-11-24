@@ -78,8 +78,8 @@ function get_pod_name {
 }
 
 function conveior_load_configuration {
-  export BUCKET_TYPE=$(yq e '.bucket_type' /home/conveior-config.yaml)
-  export BUCKET_NAME=$(yq e '.bucket_name' /home/conveior-config.yaml)
+  export BUCKET_TYPE=$(yq e '.conveior-config.bucket_type' /home/conveior-config.yaml)
+  export BUCKET_NAME=$(yq e '.conveior-config.bucket_name' /home/conveior-config.yaml)
 }
 
 
