@@ -15,4 +15,5 @@ services:
       S3_URL: "${S3_URL}"
       CONVEIOR_CONFIG: "${CONVEIOR_CONFIG}"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - conveior-config.yaml:/home/conveior-config.yaml

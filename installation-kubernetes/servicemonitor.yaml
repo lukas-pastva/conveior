@@ -4,6 +4,8 @@ kind: ServiceMonitor
 metadata:
   labels:
     release: "prom-stack"
+    app.kubernetes.io/name: conveior
+    app.kubernetes.io/part-of: kube-prometheus
   name: conveior
   namespace: monitoring
 spec:

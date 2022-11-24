@@ -6,7 +6,7 @@ do
   get_pod_name "${POD_SHORT}"
   POD="${func_result}"
   if [[ "${POD}" != "" ]]; then
-    echo_prom_helper "Sending queries from MySQL for ${POD_SHORT}"
+    echo_prom_helper "Queries for ${POD_SHORT}"
     export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
     export SQL_USER="root"
 

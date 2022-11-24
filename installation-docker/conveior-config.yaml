@@ -1,0 +1,25 @@
+conveior-config:
+  bucket_type: "S3"
+  bucket_name: "tronic"
+  backups:
+    files:
+      - name: "web-portal"
+        path: "/var/www/html"
+    dbs_mysql:
+      - name: "web-portal-sql"
+  metrics:
+    pods_mysql:
+      - name: web-portal-sql
+        queries:
+          - name: "conveior_mysql_table_size"
+            query: "SELECT TABLE_NAME AS name, (data_length + index_length) AS value FROM information_schema.TABLES WHERE information_schema.TABLES.table_schema = 'database' and information_schema.TABLES.Table_Type = 'BASE TABLE'"
+          - name: "conveior_mysql_local_wait_timeout"
+            query: "select 'web-portal-sql' as name, @@session.wait_timeout as value"
+          - name: "conveior_mysql_local_interactive_timeout"
+            query: "select 'web-portal-sql' as name, @@session.interactive_timeout as value"
+          - name: "conveior_mysql_global_wait_timeout"
+            query: "select 'web-portal-sql' as name, @@global.wait_timeout as value"
+          - name: "conveior_mysql_global_interactive_timeout"
+            query: "select 'web-portal-sql' as name, @@global.interactive_timeout as value"
+          - name: "conveior_mysql_sleeper_process"
+            query: "select 'web-portal-sql' as name, count(*) as value from INFORMATION_SCHEMA.PROCESSLIST where command='Sleep'"

@@ -1,10 +1,10 @@
 name: conveior
-namespace: sys-monitoring
+namespace: monitoring
 type: DaemonSet
 
 pods:
   - name: conveior
-    repo: lukaspastva/conveior:0.1.1
+    repo: lukaspastva/conveior:latest
     volumes:
       - name: conveior
         mountPath: /var/run/docker.sock
@@ -14,5 +14,3 @@ pods:
       - name: http
         port: 8080
     serviceMonitorEnabled: true
-
-secretsConveiorEnabled: true
