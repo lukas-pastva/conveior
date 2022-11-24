@@ -73,7 +73,13 @@ function get_pod_name {
   if [[ "${POD}" == *"${POD_SHORT}"* ]]; then
     func_result="${POD}"
   else
-    func_result=""
+    #maybe we are on docker
+    POD=$(docker ps -f status=running --format "{{.Names}}" | grep "${POD_SHORT}" || true)
+    if [[ "${POD}" == *"${POD_SHORT}"* ]]; then
+      func_result="${POD}"
+    else
+      func_result=""
+    fi
   fi
 }
 
