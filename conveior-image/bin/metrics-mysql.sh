@@ -21,8 +21,7 @@ do
                 if [[ "${QUERY^^}" != *"INSERT"* ]]; then
                   echo_prom_helper "executing query: ${QUERY}"
 
-                  export QUERY_RESULT=$(echo ${QUERY} | docker exec -i "${POD}" mysql -u${SQL_USER} -p${SQL_PASS})
-                  export PROMETHEUS_DATA=""
+                  export QUERY_RESULT=$(echo ${QUERY} | docker exec -i "${POD}" mysql -u${SQL_USER} -p${SQL_PASS} 2>/dev/null)
                   export i=0
                   export IFS=$'\n'
                   for QUERY_LINE in ${QUERY_RESULT}; do
@@ -36,17 +35,12 @@ do
                       if [ -n "$VALUE" ]; then
                         if [[ "$VALUE" != "NULL" ]]; then
                           VALUE=$(echo ${VALUE} | jq '.|ceil')
-                          if [[ $VALUE =~ ^-?[0-9]+$ ]]; then
-                            # if [ "$VALUE" -gt 0 ]; then
-                            PROMETHEUS_DATA="${PROMETHEUS_DATA}{\"chart\":\"${API}\",\"name\":\"${NAME}\",\"value\":${VALUE}},";
-                            # fi
-                          fi
+                          echo "conveior_sql_query{chart=\"${API}\", name:\"${NAME}\"} ${VALUE}"
                         fi
                       fi
                     fi
                     i=$((i + 1))
                   done
-                  echo "${PROMETHEUS_DATA}"
                 fi
               fi
             fi
