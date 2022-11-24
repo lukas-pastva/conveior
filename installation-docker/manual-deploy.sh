@@ -16,7 +16,7 @@ if [ -z "${CONVEIOR_S3_SECRET+xxx}" ]; then
 fi
 
 if [ -z "${CONVEIOR_S3_URL+xxx}" ]; then
-  read -p "Please input CONVEIOR_S3_URL (example: *****) " CONVEIOR_S3_URL
+  read -p "Please input CONVEIOR_S3_URL (example: https://eu2.contabostorage.com) " CONVEIOR_S3_URL
   export CONVEIOR_S3_URL="${CONVEIOR_S3_URL}"
 fi
 
