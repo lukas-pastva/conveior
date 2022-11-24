@@ -23,17 +23,17 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
-            - name: S3_KEY
+            - name: CONVEIOR_S3_KEY
               valueFrom:
                 secretKeyRef:
                   name: conveior
                   key: CONVEIOR_S3_KEY
-            - name: S3_SECRET
+            - name: CONVEIOR_S3_SECRET
               valueFrom:
                 secretKeyRef:
                   name: conveior
                   key: CONVEIOR_S3_SECRET
-            - name: S3_URL
+            - name: CONVEIOR_S3_URL
               valueFrom:
                 secretKeyRef:
                   name: conveior
