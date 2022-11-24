@@ -3,7 +3,7 @@
 set -e
 echo "Manually deploying Conveior into Docker."
 
-. .env || true 2>/dev/null
+. .env 2>/dev/null || true
 
 if [ -z "${CONVEIOR_S3_KEY+xxx}" ]; then
   read -p "Please input CONVEIOR_S3_KEY (example: *****) " CONVEIOR_S3_KEY
