@@ -27,11 +27,8 @@ do
                     export RESULT_NAME=$(echo "${QUERY_LINE}" | awk -F'\t' '{print $1}')
                     export RESULT_VALUE=$(echo "${QUERY_LINE}" | awk -F'\t' '{print $2}')
 
-                    if [ -n "$VALUE" ]; then
-                      if [[ "$VALUE" != "NULL" ]]; then
-                        VALUE=$(echo ${VALUE} | jq '.|ceil')
+                    if [ "$RESULT_VALUE" != "value" ]; then
                         echo "conveior_sql_query{pod=\"${POD_SHORT}\",query_name:\"${QUERY_NAME}\",result_name:\"${RESULT_NAME}\"} ${RESULT_VALUE}"
-                      fi
                     fi
                   done
                 fi
