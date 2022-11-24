@@ -1,12 +1,8 @@
 #!/bin/bash
 source functions.inc.sh
 
-if [[ "${1}" != "" ]]; then
-  export PODS_MYSQL="${1}"
-fi
-
-export IFS=","
-for POD_SHORT in ${PODS_MYSQL}; do
+while read POD_SHORT;
+do
   get_pod_name "${POD_SHORT}"
   POD="${func_result}"
   if [[ "${POD}" != "" ]]; then
@@ -45,4 +41,4 @@ for POD_SHORT in ${PODS_MYSQL}; do
       rm "${ZIP_FILE}"
     fi
   fi
-done
+done < <(yq e '.backups.dbs_mysql.[].name' /home/conveior-config.yaml)

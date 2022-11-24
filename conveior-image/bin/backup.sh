@@ -1,10 +1,7 @@
 #!/bin/bash
 export $(xargs -0 -a "/proc/1/environ")
-source functions.inc.sh
 
-export SLEEP_TIME=$(shuf -i 10-30 -n1)
-echo_prom_helper "running backups, but sleeping first for ${SLEEP_TIME} seconds"
-sleep "${SLEEP_TIME}"
+sleep $(shuf -i 10-30 -n1)
 
 backup-mysql.sh
 backup-files.sh

@@ -1,12 +1,8 @@
 #!/bin/bash
 source functions.inc.sh
 
-if [[ "${1}" != "" ]]; then
-  export BACKUP_FILES="${1}"
-fi
-
-export IFS=","
-for ITEM in ${BACKUP_FILES}; do
+while read ITEM;
+do
   export POD_SHORT=$(echo ${ITEM} | awk -F":" '{print $1}')
   get_pod_name "${POD_SHORT}"
   POD="${func_result}"
@@ -33,4 +29,4 @@ for ITEM in ${BACKUP_FILES}; do
       echo_prom_helper "Empty directory ${VOLUME}, nothing to backup"
     fi
   fi
-done
+done < <(yq e '.backups.files.[].name' /home/conveior-config.yaml)

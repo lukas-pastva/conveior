@@ -18,9 +18,6 @@ get_pod_name "${POD_SHORT}"
 POD="${func_result}"
 if [[ "${POD}" != "" ]]; then
 
-  # perform backup, in case sth is horrifyingly wrong
-  bash backup-mysql.sh "${POD}"
-
   mkdir -p /tmp/restore
   download_file "${FILE_ZIP}" "/tmp/restore/backup.zip"
   cd /tmp/restore && unzip -qq backup.zip && rm backup.zip
