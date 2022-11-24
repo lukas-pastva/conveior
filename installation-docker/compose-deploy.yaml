@@ -9,7 +9,6 @@ services:
       CONVEIOR_S3_KEY: "${CONVEIOR_S3_KEY}"
       CONVEIOR_S3_SECRET: "${CONVEIOR_S3_SECRET}"
       CONVEIOR_S3_URL: "${CONVEIOR_S3_URL}"
-      CONVEIOR_BUCKET_TYPE: "S3"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./conveior-config.yaml:/home/conveior-config.yaml
