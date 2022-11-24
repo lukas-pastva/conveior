@@ -23,8 +23,8 @@ function download_file_s3 {
   dateValue=`date -R`
   resource="/${BUCKET_NAME}/${FILE_S3}"
   stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
-  signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-  curl -s -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" -o "${FILENAME}"
+  signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${CONVEIOR_S3_SECRET} -binary | base64`
+  curl -s -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${CONVEIOR_S3_KEY}:${signature}" "${CONVEIOR_S3_URL}/${BUCKET_NAME}/${FILE_S3}" -o "${FILENAME}"
 }
 
 function download_file_gcp {
@@ -63,8 +63,9 @@ function upload_file_s3 () {
 
 ${contentType}
 ${dateValue}
-${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
-  curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
+${resource}" | openssl sha1 -hmac ${CONVEIOR_S3_SECRET} -binary | base64)
+#  echo "curl -X PUT -T \"${ZIP_FILE}\" -H \"Date: ${dateValue}\" -H \"Content-Type: ${contentType}\" -H \"Authorization: AWS ${CONVEIOR_S3_KEY}:${signature}\" \"${BUCKET_TYPE}/${BUCKET_NAME}/${FILE_S3}\""
+  curl -X PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${CONVEIOR_S3_KEY}:${signature}" "${CONVEIOR_S3_URL}/${BUCKET_NAME}/${FILE_S3}"
 }
 
 function get_pod_name {
