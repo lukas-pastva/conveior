@@ -10,9 +10,9 @@ do
     export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
     export SQL_USER="root"
 
-    while read NAME;
+    while read QUERY_NAME;
     do
-      QUERY=$(yq e ".metrics.pods_mysql | with_entries(select(.value.name == \"$POD_SHORT\"))" /home/conveior-config.yaml | yq e ".0.queries | with_entries(select(.value.name == \"$NAME\" ))" | yq e ".[].query")
+      QUERY=$(yq e ".metrics.pods_mysql | with_entries(select(.value.name == \"$POD_SHORT\"))" /home/conveior-config.yaml | yq e ".0.queries | with_entries(select(.value.name == \"$QUERY_NAME\" ))" | yq e ".[].query")
       if [[ "${QUERY^^}" != *"DROP"* ]]; then
         if [[ "${QUERY^^}" != *"UPDATE"* ]]; then
           if [[ "${QUERY^^}" != *"TRUNCATE"* ]]; then
@@ -21,25 +21,18 @@ do
                 if [[ "${QUERY^^}" != *"INSERT"* ]]; then
                   echo_prom_helper "executing query: ${QUERY}"
 
-                  export QUERY_RESULT=$(echo ${QUERY} | docker exec -i "${POD}" mysql -u${SQL_USER} -p${SQL_PASS} 2>/dev/null)
-                  export i=0
+                  export QUERY_RESULT=$(echo "${QUERY}" | docker exec -i "${POD}" mysql -u${SQL_USER} -p${SQL_PASS} 2>/dev/null)
                   export IFS=$'\n'
                   for QUERY_LINE in ${QUERY_RESULT}; do
-                    if [[ "${i}" == "0" ]]; then
-                      export QUERY_COLUMNS=${QUERY_LINE}
-                    else
-                      export API=$(echo ${QUERY_LINE} | awk -F'\t' '{print $1}')
-                      export NAME=$(echo ${QUERY_LINE} | awk -F'\t' '{print $2}')
-                      export VALUE=$(echo ${QUERY_LINE} | awk -F'\t' '{print $3}')
+                    export RESULT_NAME=$(echo "${QUERY_LINE}" | awk -F'\t' '{print $1}')
+                    export RESULT_VALUE=$(echo "${QUERY_LINE}" | awk -F'\t' '{print $2}')
 
-                      if [ -n "$VALUE" ]; then
-                        if [[ "$VALUE" != "NULL" ]]; then
-                          VALUE=$(echo ${VALUE} | jq '.|ceil')
-                          echo "conveior_sql_query{chart=\"${API}\", name:\"${NAME}\"} ${VALUE}"
-                        fi
+                    if [ -n "$VALUE" ]; then
+                      if [[ "$VALUE" != "NULL" ]]; then
+                        VALUE=$(echo ${VALUE} | jq '.|ceil')
+                        echo "conveior_sql_query{pod=\"${POD_SHORT}\",query_name:\"${QUERY_NAME}\",result_name:\"${RESULT_NAME}\"} ${RESULT_VALUE}"
                       fi
                     fi
-                    i=$((i + 1))
                   done
                 fi
               fi
