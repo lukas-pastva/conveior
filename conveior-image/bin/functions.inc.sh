@@ -65,7 +65,7 @@ ${contentType}
 ${dateValue}
 ${resource}" | openssl sha1 -hmac ${CONVEIOR_S3_SECRET} -binary | base64)
 #  echo "curl -X PUT -T \"${ZIP_FILE}\" -H \"Date: ${dateValue}\" -H \"Content-Type: ${contentType}\" -H \"Authorization: AWS ${CONVEIOR_S3_KEY}:${signature}\" \"${BUCKET_TYPE}/${BUCKET_NAME}/${FILE_S3}\""
-  curl -X PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${CONVEIOR_S3_KEY}:${signature}" "${CONVEIOR_S3_URL}/${BUCKET_NAME}/${FILE_S3}"
+  curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${CONVEIOR_S3_KEY}:${signature}" "${CONVEIOR_S3_URL}/${BUCKET_NAME}/${FILE_S3}"
 }
 
 function get_pod_name {
