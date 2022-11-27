@@ -25,7 +25,7 @@ RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/d
 
 RUN mkdir -p /var/log /usr/share/nginx/logs && \
     touch /var/log/cron.log
-RUN (crontab -l ; echo "*/5 * * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1") | crontab
+RUN (crontab -l ; echo "0 19 * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1") | crontab
 
 RUN curl -sL https://github.com/docker/compose/releases/download/v2.10.2/docker-compose-linux-x86_64 -o '/usr/local/bin/docker-compose' && \
     chmod +x /usr/local/bin/docker-compose && \
