@@ -19,4 +19,4 @@ while true; do { \
 done
 #echo -e "HTTP/1.1 200 OK\r\n$(date)\r\n\r\n$(bash /usr/local/bin/metrics.sh)" |  nc -vl 8080
 
-#service cron start & tail -f /var/log/cron.log
+service cron start & tail -f /var/log/cron.log
