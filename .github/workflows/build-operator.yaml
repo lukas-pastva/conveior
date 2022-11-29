@@ -1,4 +1,4 @@
-name: conveior-build
+name: build-operator
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  conveior-build:
+  build-operator:
     runs-on: ubuntu-latest
 
     steps:
