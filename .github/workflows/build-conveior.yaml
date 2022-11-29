@@ -2,6 +2,8 @@ name: build-conveior
 
 on:
   push:
+    branches:
+      - main
 
 jobs:
   build-conveior:
