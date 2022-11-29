@@ -12,7 +12,7 @@ metadata:
   name: conveior-viewer-role
 rules:
 - apiGroups:
-  - my.domain
+  - conveior.io
   resources:
   - conveiors
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - my.domain
+  - conveior.io
   resources:
   - conveiors/status
   verbs:

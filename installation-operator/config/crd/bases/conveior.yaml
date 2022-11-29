@@ -1,0 +1,8 @@
+---
+apiVersion: conveior.io/v1alpha1
+kind: Conveior
+metadata:
+  name: sys-conveior-operator-test
+  labels:
+    app.kubernetes.io/name: sys-conveior-operator-test
+  namespace: sys-monitoring

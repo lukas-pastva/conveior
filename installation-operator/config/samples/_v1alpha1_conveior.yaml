@@ -1,4 +1,4 @@
-apiVersion: my.domain/v1alpha1
+apiVersion: conveior.io/v1alpha1
 kind: Conveior
 metadata:
   labels:

@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - conveior.io
+  resources:
+  - conveiors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - conveior.io
+  resources:
+  - conveiors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - conveior.io
+  resources:
+  - conveiors/status
+  verbs:
+  - get
+  - patch
+  - update

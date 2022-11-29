@@ -12,7 +12,7 @@ metadata:
   name: conveior-editor-role
 rules:
 - apiGroups:
-  - my.domain
+  - conveior.io
   resources:
   - conveiors
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - my.domain
+  - conveior.io
   resources:
   - conveiors/status
   verbs:

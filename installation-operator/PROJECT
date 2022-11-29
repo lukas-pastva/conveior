@@ -1,4 +1,4 @@
-domain: my.domain
+domain: conveior.io
 layout:
 - go.kubebuilder.io/v3
 plugins:
@@ -11,7 +11,7 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: my.domain
+  domain: conveior.io
   kind: Conveior
   path: conveior.io/Conveior/api/v1alpha1
   version: v1alpha1

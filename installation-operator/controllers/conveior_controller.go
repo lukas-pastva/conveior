@@ -33,9 +33,9 @@ type ConveiorReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=my.domain,resources=conveiors,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=my.domain,resources=conveiors/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=my.domain,resources=conveiors/finalizers,verbs=update
+//+kubebuilder:rbac:groups=conveior.io,resources=conveiors,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=conveior.io,resources=conveiors/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=conveior.io,resources=conveiors/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
