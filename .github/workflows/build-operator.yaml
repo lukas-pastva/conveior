@@ -16,6 +16,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref }}
 
+      - name: go
+        run: |
+          apt-get update
+          apt-get install go
+
       - name: build
         run: |
           VERSION=$(git describe | awk -F '-' '{print $1}')
