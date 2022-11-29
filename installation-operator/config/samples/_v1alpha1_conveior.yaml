@@ -1,0 +1,12 @@
+apiVersion: my.domain/v1alpha1
+kind: Conveior
+metadata:
+  labels:
+    app.kubernetes.io/name: conveior
+    app.kubernetes.io/instance: conveior-sample
+    app.kubernetes.io/part-of: installation-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: installation-operator
+  name: conveior-sample
+spec:
+  # TODO(user): Add fields here

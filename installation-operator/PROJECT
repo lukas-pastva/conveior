@@ -5,5 +5,14 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: installation-operator
-repo: conveior.io/ConveiorOperator
+repo: conveior.io/Conveior
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: my.domain
+  kind: Conveior
+  path: conveior.io/Conveior/api/v1alpha1
+  version: v1alpha1
 version: "3"

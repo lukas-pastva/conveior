@@ -1,0 +1,27 @@
+# permissions for end users to view conveiors.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: conveior-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: installation-operator
+    app.kubernetes.io/part-of: installation-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: conveior-viewer-role
+rules:
+- apiGroups:
+  - my.domain
+  resources:
+  - conveiors
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - my.domain
+  resources:
+  - conveiors/status
+  verbs:
+  - get
