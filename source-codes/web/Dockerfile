@@ -1,3 +1,3 @@
 FROM pardahlman/sphinx
 
-COPY ./docs /docs
+COPY ./source-codes/web/docs /docs
