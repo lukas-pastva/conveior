@@ -23,6 +23,7 @@ jobs:
           docker build -f ./source-codes/web/Dockerfile -t conveior-web:latest .
           docker image ls
           docker tag conveior-web:latest registry.hub.docker.com/lukaspastva/conveior-web:${VERSION}
+          docker image ls
           docker push registry.hub.docker.com/lukaspastva/conveior-web:latest
           docker push registry.hub.docker.com/lukaspastva/conveior-web:${VERSION}
 
