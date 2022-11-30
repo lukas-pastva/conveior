@@ -28,8 +28,8 @@ RUN (crontab -l ; echo "0 19 * * * /usr/local/bin/backup.sh >> /var/log/cron.log
 RUN curl -sL https://github.com/docker/compose/releases/download/v2.10.2/docker-compose-linux-x86_64 -o '/usr/local/bin/docker-compose' && \
     chmod +x /usr/local/bin/docker-compose && ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-COPY ./source-codes/conveior/nginx.conf /etc/nginx/nginx.conf
-COPY ./source-codes/conveior/bin /usr/local/bin
+COPY ./source-code/conveior/nginx.conf /etc/nginx/nginx.conf
+COPY ./source-code/conveior/bin /usr/local/bin
 RUN chmod -R +x /usr/local/bin
 
 WORKDIR /usr/local/bin

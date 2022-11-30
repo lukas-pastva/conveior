@@ -23,6 +23,9 @@ jobs:
         with:
           version: v3.4.0
 
+      - name: Running lint with helm v3
+        run: ./helm3 lint --strict --values mailu/helm-lint-values.yaml mailu
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.3.0
         with:
