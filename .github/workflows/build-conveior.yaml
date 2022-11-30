@@ -20,8 +20,8 @@ jobs:
         run: |
           VERSION=$(git describe | awk -F '-' '{print $1}')
           docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
-          docker build -f ./source-codes/web/Dockerfile -t conveior:latest .
-          docker tag conveior:latest registry.hub.docker.com/lukaspastva/conveior:${VERSION}
+          docker build -f ./source-codes/web/Dockerfile -t registry.hub.docker.com/lukaspastva/conveior:latest .
+          docker tag registry.hub.docker.com/lukaspastva/conveior:latest registry.hub.docker.com/lukaspastva/conveior:${VERSION}
           docker push registry.hub.docker.com/lukaspastva/conveior:latest
           docker push registry.hub.docker.com/lukaspastva/conveior:${VERSION}
 
