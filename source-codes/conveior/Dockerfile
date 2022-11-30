@@ -20,19 +20,16 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && \
-    chmod a+x /usr/local/bin/yq
+RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
 
-RUN mkdir -p /var/log /usr/share/nginx/logs && \
-    touch /var/log/cron.log
+RUN mkdir -p /var/log /usr/share/nginx/logs && touch /var/log/cron.log
 RUN (crontab -l ; echo "0 19 * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1") | crontab
 
 RUN curl -sL https://github.com/docker/compose/releases/download/v2.10.2/docker-compose-linux-x86_64 -o '/usr/local/bin/docker-compose' && \
-    chmod +x /usr/local/bin/docker-compose && \
-    ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose && ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY bin /usr/local/bin
+COPY ./source-codes/conveior/nginx.conf /etc/nginx/nginx.conf
+COPY ./source-codes/conveior/bin /usr/local/bin
 RUN chmod -R +x /usr/local/bin
 
 WORKDIR /usr/local/bin
