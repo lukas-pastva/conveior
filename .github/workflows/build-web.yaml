@@ -1,0 +1,29 @@
+name: build-web
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: build
+        run: |
+          VERSION=$(git describe | awk -F '-' '{print $1}')
+          docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
+          docker build -f ./source-codes/web/Dockerfile -t conveior-web:latest .
+          docker image ls
+          docker tag conveior-web:latest registry.hub.docker.com/lukaspastva/conveior-web:${VERSION}
+          docker push registry.hub.docker.com/lukaspastva/conveior:latest
+          docker push registry.hub.docker.com/lukaspastva/conveior:${VERSION}
+
+        
