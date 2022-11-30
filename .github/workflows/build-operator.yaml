@@ -25,7 +25,7 @@ jobs:
         run: |
           VERSION=$(git describe | awk -F '-' '{print $1}')
           docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
-          cd installation-operator && make docker-build
+          cd /source-codes/operator && make docker-build
           docker tag controller:latest registry.hub.docker.com/lukaspastva/conveior-operator:latest
           docker tag controller:latest registry.hub.docker.com/lukaspastva/conveior-operator:${VERSION}
           docker push registry.hub.docker.com/lukaspastva/conveior-operator:latest

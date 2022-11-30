@@ -22,7 +22,6 @@ jobs:
           docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
           docker build -f ./source-codes/web/Dockerfile -t registry.hub.docker.com/lukaspastva/conveior-web:latest .
           docker tag registry.hub.docker.com/lukaspastva/conveior-web:latest registry.hub.docker.com/lukaspastva/conveior-web:${VERSION}
-          docker image ls
           docker push registry.hub.docker.com/lukaspastva/conveior-web:latest
           docker push registry.hub.docker.com/lukaspastva/conveior-web:${VERSION}
 
