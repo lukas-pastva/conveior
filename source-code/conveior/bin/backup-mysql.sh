@@ -7,7 +7,7 @@ do
   POD="${func_result}"
   if [[ "${POD}" != "" ]]; then
     echo_prom_helper "Backing up ${POD}"
-  
+
     export DATABASES_STR=""
     export SERVER_DIR="/tmp/${POD_SHORT}"
     export FILE="${POD_SHORT}-${DATE}.sql"
@@ -36,15 +36,15 @@ do
 
       ENCRYPT=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].encrypt" /home/conveior-config.yaml)
       if [ "${ENCRYPT}" == "true" ]; then
-        zip -qq -p "${SQL_PASS}" "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
+        zip -qq --password "${SQL_PASS}" "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
       else
         zip -qq "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
       fi
 
-      rm "/${SERVER_DIR}/${FILE}"
+#      rm "/${SERVER_DIR}/${FILE}"
       upload_file "${ZIP_FILE}" "backup-mysql/${POD_SHORT}/${ZIP_FILE_ONLY}"
 
-      rm "${ZIP_FILE}"
+#      rm "${ZIP_FILE}"
     fi
   fi
 done < <(yq e '.conveior-config.backups.dbs_mysql.[].name' /home/conveior-config.yaml)
