@@ -2,27 +2,24 @@ name: build-cli
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
 
 jobs:
   build-cli:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        arch:
+          - amd64
+        os:
+          - linux
+          - darwin
+          - windows
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2.1.4
         with:
-          fetch-depth: 0
-          ref: ${{ github.ref }}
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.19.3
-
-      - name: build
-        run: |
-          VERSION=$(git describe | awk -F '-' '{print $1}')
-          docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}" 2>/dev/null
-          cd ./source-code/cli && make docker-build
+          go-version: 1.19
+      - run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build .
