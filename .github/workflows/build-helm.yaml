@@ -1,35 +1,35 @@
-name: build-helm
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build-helm:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v1
-        with:
-          version: v3.4.0
-
-      - name: Running lint with helm v3
-        run: ./helm3 lint --strict --values mailu/helm-lint-values.yaml mailu
-
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.3.0
-        with:
-          charts_dir: installation-helm
-        env:
-          CR_TOKEN: "${{ secrets.ACCESS_TOKEN }}"
-          CR_SKIP_EXISTING: true
+#name: build-helm
+#
+#on:
+#  push:
+#    branches:
+#      - main
+#
+#jobs:
+#  build-helm:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Configure Git
+#        run: |
+#          git config user.name "$GITHUB_ACTOR"
+#          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+#
+#      - name: Install Helm
+#        uses: azure/setup-helm@v1
+#        with:
+#          version: v3.4.0
+#
+#      - name: Running lint with helm v3
+#        run: ./helm3 lint --strict --values mailu/helm-lint-values.yaml mailu
+#
+#      - name: Run chart-releaser
+#        uses: helm/chart-releaser-action@v1.3.0
+#        with:
+#          charts_dir: installation-helm
+#        env:
+#          CR_TOKEN: "${{ secrets.ACCESS_TOKEN }}"
+#          CR_SKIP_EXISTING: true

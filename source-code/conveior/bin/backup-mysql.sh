@@ -33,9 +33,15 @@ do
 
       export ZIP_FILE_ONLY="${FILE}.zip"
       export ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
-      zip -qq "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
-      rm "/${SERVER_DIR}/${FILE}"
 
+      ENCRYPT=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].encrypt" /home/conveior-config.yaml)
+      if [ "${ENCRYPT}" == "true" ]; then
+        zip -qq -p "${SQL_PASS}" "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
+      else
+        zip -qq "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
+      fi
+
+      rm "/${SERVER_DIR}/${FILE}"
       upload_file "${ZIP_FILE}" "backup-mysql/${POD_SHORT}/${ZIP_FILE_ONLY}"
 
       rm "${ZIP_FILE}"

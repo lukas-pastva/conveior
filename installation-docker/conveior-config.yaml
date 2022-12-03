@@ -7,6 +7,10 @@ conveior-config:
         path: "/etc/ssl"
     dbs_mysql:
       - name: "mailu-mysql"
+#       encrypt (optional) - will use sql password for the zip file
+        encrypt: true
+      - name: "mailu-mysql-2"
+#       encrypt (optional) - will use sql password for the zip file
   metrics:
     pods_mysql:
       - name: mailu-mysql
