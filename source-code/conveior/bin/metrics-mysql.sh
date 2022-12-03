@@ -1,7 +1,9 @@
 #!/bin/bash
 source functions.inc.sh
 
-while read POD_SHORT;
+export PODS=$(yq e '.conveior-config.metrics.pods_mysql.[].name' /home/conveior-config.yaml)
+export IFS=$'\n'
+for POD_SHORT in $PODS;
 do
   get_pod_name "${POD_SHORT}"
   POD="${func_result}"
@@ -39,4 +41,4 @@ do
       fi
     done < <(yq e ".conveior-config.metrics.pods_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].queries.[].name" /home/conveior-config.yaml)
   fi
-done < <(yq e '.conveior-config.metrics.pods_mysql.[].name' /home/conveior-config.yaml)
+done

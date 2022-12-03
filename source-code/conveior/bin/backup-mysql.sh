@@ -1,7 +1,9 @@
 #!/bin/bash
 source functions.inc.sh
 
-while read POD_SHORT;
+export PODS=$(yq e '.conveior-config.backups.dbs_mysql.[].name' /home/conveior-config.yaml)
+export IFS=$'\n'
+for POD_SHORT in $PODS;
 do
   get_pod_name "${POD_SHORT}"
   POD="${func_result}"
@@ -41,10 +43,10 @@ do
         zip -qq "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
       fi
 
-#      rm "/${SERVER_DIR}/${FILE}"
+      rm "/${SERVER_DIR}/${FILE}"
       upload_file "${ZIP_FILE}" "backup-mysql/${POD_SHORT}/${ZIP_FILE_ONLY}"
 
-#      rm "${ZIP_FILE}"
+      rm "${ZIP_FILE}"
     fi
   fi
-done < <(yq e '.conveior-config.backups.dbs_mysql.[].name' /home/conveior-config.yaml)
+done
