@@ -9,6 +9,18 @@ services:
       CONVEIOR_S3_KEY: "${CONVEIOR_S3_KEY}"
       CONVEIOR_S3_SECRET: "${CONVEIOR_S3_SECRET}"
       CONVEIOR_S3_URL: "${CONVEIOR_S3_URL}"
+# either choose variable
+#      CONVEIOR_CONFIG_FILE: |
+#        conveior-config:
+#          bucket_type: "S3"
+#          bucket_name: "tronic"
+#          backups:
+#            files:
+#              - name: "mailu-resolver-1"
+#                path: "/etc/ssl"
+#            dbs_mysql:
+#              - name: "mailu-mysql"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./conveior-config.yaml:/home/conveior-config.yaml
+# or choose external file as config
+#      - ./conveior-config.yaml:/home/conveior-config.yaml
