@@ -1,2 +1,2 @@
 FROM debian:10-slim
-COPY training-cli /usr/local/bin/
+COPY slu /usr/local/bin

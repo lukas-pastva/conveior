@@ -1,40 +1,62 @@
 <p align="center">
-  <h1 align="center">training-cli</h1>
+  <h1 align="center">slu: SikaLabs Utils</h1>
   <p align="center">
-    <a href="https://sika.io"><img alt="Ondrej Sika" src="https://img.shields.io/badge/OPENSOURCE BY-ONDREJ SIKA-131480?style=for-the-badge"></a>
-    <a href="https://sika.io"><img alt="Ondrej Sika" src="https://img.shields.io/badge/-sika.io-gray?style=for-the-badge"></a>
-    <a href="mailto:ondrej@sika.io"><img alt="Ondrej Sika" src="https://img.shields.io/badge/-ondrej@sika.io-gray?style=for-the-badge"></a>
+    <a href="https://opensource.sikalabs.com"><img alt="SikaLabs" src="https://img.shields.io/badge/OPENSOURCE BY-SIKALABS-131480?style=for-the-badge"></a>
+    <a href="https://sikalabs.com"><img alt="SikaLabs" src="https://img.shields.io/badge/-sikalabs.com-gray?style=for-the-badge"></a>
+    <a href="mailto:opensource@sikalabs.com"><img alt="SikaLabs" src="https://img.shields.io/badge/-opensource@sikalabs.com-gray?style=for-the-badge"></a>
   </p>
 </p>
 
-## Example Usage
-
-![](./misc/images/training-cli_kubernetes_connect.png)
-
 ## Install
 
-## Install Mac
+### Mac
 
 ```
-brew install ondrejsika/tap/training-cli
+brew install sikalabs/tap/slu
 ```
 
-## Install Linux
+### Linux AMD64 (using install-slu, recommended)
 
-```
-curl -fsSL https://raw.githubusercontent.com/lukaspastva/source-code/cli/master/install.sh | sh
-```
+Install latest version of **slu**  using [install-slu](https://github.com/sikalabs/install-slu) tool. See [install.sh](./install.sh)
 
-## Install Windows
-
-Using **scoop**
-
-```
-scoop install https://raw.githubusercontent.com/ondrejsika/scoop-bucket/master/training-cli.json
+```bash
+curl -fsSL https://raw.githubusercontent.com/sikalabs/slu/master/install.sh | sudo sh
 ```
 
-## Install using `slu` (Linux, Mac)
+For upgrade of **slu** just run
+
+```bash
+install-slu install
+```
+
+### Windows (scoop)
+
+Install unsing [scoop](https://scoop.sh/)
 
 ```
-slu install-bin-tool training-cli
+scoop install https://raw.githubusercontent.com/sikalabs/scoop-bucket/master/slu.json
+```
+
+### Autocomplete
+
+See: `slu completion`
+
+#### Bash
+
+```
+source <(slu completion bash)
+```
+
+## CLI Usage
+
+### Generated CLI Docs on Github
+
+See: <https://github.com/sikalabs/slu-cli-docs/blob/master/slu.md#slu>
+
+## Generate CLI Docs
+
+Generate Markdown CLI docs to `./cobra-docs`
+
+```
+slu generate-docs
 ```

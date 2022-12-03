@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/lukaspastva/source-code/cli/cmd"
+	"github.com/sikalabs/slu/cmd"
 )
 
 func main() {
