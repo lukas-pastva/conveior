@@ -13,6 +13,7 @@ echo ""
 # in case config is via variable
 if [ "${CONVEIOR_CONFIG_FILE}" != "" ]; then
     echo "${CONVEIOR_CONFIG_FILE}" > /home/conveior-config.yaml
+    export CONVEIOR_CONFIG_FILE=""
 fi
 
 #nginx -g "daemon off;"
