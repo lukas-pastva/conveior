@@ -1,4 +1,4 @@
-name: build-web
+name: build-cli
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-web:
+  build-cli:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,13 +16,13 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref }}
 
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.3
+
       - name: build
         run: |
           VERSION=$(git describe | awk -F '-' '{print $1}')
-#          docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
-#          docker build -f ./source-code/web/Dockerfile -t registry.hub.docker.com/lukaspastva/conveior-web:latest .
-#          docker tag registry.hub.docker.com/lukaspastva/conveior-web:latest registry.hub.docker.com/lukaspastva/conveior-web:${VERSION}
-#          docker push registry.hub.docker.com/lukaspastva/conveior-web:latest
-#          docker push registry.hub.docker.com/lukaspastva/conveior-web:${VERSION}
-
-        
+          docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}" 2>/dev/null
+          cd ./source-code/cli && make docker-build
