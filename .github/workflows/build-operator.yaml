@@ -1,9 +1,9 @@
 name: build-operator
 
 on:
-  push:
-    branches:
-      - main
+#  push:
+#    branches:
+#      - main
 
 jobs:
   build-operator:
