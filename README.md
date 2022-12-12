@@ -14,25 +14,25 @@ TLDR: Do you need out of box lightweight solution to back up all of your DB and 
 Installation
 ==================
 
-Kubernetes Operator
+### Kubernetes Operator
 - https://github.com/lukas-pastva/conveior/tree/main/installation-operator
 - Install the operator via HELM chart and use CRDs in convinient way
 
-HELM installation
+### HELM installation
 - https://github.com/lukas-pastva/conveior/tree/main/installation-helm
 - There is a HELM chart in conveior repo. Just run it as you would normally do.
 - The chart will be soon uploaded to global helm registry
 
-Standard Kubernetes installation
+### Standard Kubernetes installation
 - https://github.com/lukas-pastva/conveior/tree/main/installation-kubernetes
 - There are static Kubernetes manifests that will deploy conveior into daemon sets.
 - Also it will create ServiceMonitor that will be scraped by Prometheus.
 
-Docker installation
+### Docker installation
 - https://github.com/lukas-pastva/conveior/tree/main/installation-docker
 - In directory conveior-docker there is docker-compose file and bash file to help you installing conveior on your docker server.
 
-Backup features:
+### Backup features:
 - Backing up MySQL pods
 - Backing up PostgreSQL pods
 - Backing up files inside pods
