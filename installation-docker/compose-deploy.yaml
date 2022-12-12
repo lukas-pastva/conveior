@@ -20,6 +20,10 @@ services:
 #                path: "/etc/ssl"
 #            dbs_mysql:
 #              - name: "mailu-mysql"
+#            dbs_pgsql:
+#              - name: "sys-gitlab-postgresql-0"
+#                #       encrypt (optional) - will use sql password for the zip file
+#                encrypt: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 # or choose external file as config
