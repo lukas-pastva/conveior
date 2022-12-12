@@ -10,7 +10,7 @@ conveior-config:
 #       encrypt (optional) - will use sql password for the zip file
         encrypt: true
     dbs_pgsql:
-      - name: "sys-gitlab-postgresql-0"
+      - name: "sys-gitlab-postgresql"
 #       encrypt (optional) - will use sql password for the zip file
         encrypt: true
   metrics:

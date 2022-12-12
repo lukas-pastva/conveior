@@ -21,7 +21,7 @@ services:
 #            dbs_mysql:
 #              - name: "mailu-mysql"
 #            dbs_pgsql:
-#              - name: "sys-gitlab-postgresql-0"
+#              - name: "sys-gitlab-postgresql"
 #                #       encrypt (optional) - will use sql password for the zip file
 #                encrypt: true
     volumes:
