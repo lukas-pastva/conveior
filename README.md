@@ -32,6 +32,10 @@ Docker installation
 - https://github.com/lukas-pastva/conveior/tree/main/installation-docker
 - In directory conveior-docker there is docker-compose file and bash file to help you installing conveior on your docker server.
 
+Backup features:
+- Backing up MySQL pods
+- Backing up PostgreSQL pods
+- Backing up files inside pods
 
 License
 ==================
