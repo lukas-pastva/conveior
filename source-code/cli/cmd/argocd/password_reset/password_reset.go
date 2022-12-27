@@ -13,7 +13,7 @@ var FlagNamespace string
 
 var Cmd = &cobra.Command{
 	Use:     "password-reset",
-	Short:   "Reset ArgoCD Admin Passowrd",
+	Short:   "Reset ArgoCD Admin Password",
 	Aliases: []string{"pr"},
 	Args:    cobra.NoArgs,
 	Run: func(c *cobra.Command, args []string) {

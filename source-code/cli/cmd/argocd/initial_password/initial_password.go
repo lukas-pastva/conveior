@@ -15,7 +15,7 @@ var CmdFlagNamespace string
 
 var Cmd = &cobra.Command{
 	Use:     "initial-password",
-	Short:   "Get ArgoCD Initial Passowrd",
+	Short:   "Get ArgoCD Initial Password",
 	Aliases: []string{"ip"},
 	Args:    cobra.NoArgs,
 	Run: func(c *cobra.Command, args []string) {

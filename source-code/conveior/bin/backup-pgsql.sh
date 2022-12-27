@@ -21,7 +21,7 @@ do
       export SQL_USER=$(docker exec -i ${POD} bash -c 'echo ${POSTGRES_USER}')
     fi
 
-    # try to get passowrd from config
+    # try to get password from config
     export SQL_PASS=$(yq e ".conveior-config.backups.dbs_pgsql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" /home/conveior-config.yaml)
     if [[ "${SQL_PASS}" == "null" ]]; then
       export SQL_PASS=$(docker exec -i ${POD} bash -c 'cat ${POSTGRES_PASSWORD_FILE}')

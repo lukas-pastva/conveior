@@ -16,7 +16,7 @@ var FlagAWX string
 
 var Cmd = &cobra.Command{
 	Use:     "password",
-	Short:   "Get AWX Admin Passowrd",
+	Short:   "Get AWX Admin Password",
 	Aliases: []string{"p"},
 	Args:    cobra.NoArgs,
 	Run: func(c *cobra.Command, args []string) {
