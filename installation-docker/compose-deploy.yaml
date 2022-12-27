@@ -26,5 +26,4 @@ services:
 #                encrypt: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-# or choose external file as config
-#      - ./conveior-config.yaml:/home/conveior-config.yaml
+      - ./conveior-config.yaml:/home/conveior-config.yaml # or choose external file as config
