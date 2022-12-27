@@ -1,25 +1,25 @@
-name: build-cli
-
-on:
-#  push:
-#    branches: [ "*" ]
-#  pull_request:
-#    branches: [ "*" ]
-
-jobs:
-  build-cli:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch:
-          - amd64
-        os:
-          - linux
-          - darwin
-          - windows
-    steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-go@v2.1.4
-        with:
-          go-version: 1.19
-      - run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build .
+#name: build-cli
+#
+#on:
+##  push:
+##    branches: [ "*" ]
+##  pull_request:
+##    branches: [ "*" ]
+#
+#jobs:
+#  build-cli:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        arch:
+#          - amd64
+#        os:
+#          - linux
+#          - darwin
+#          - windows
+#    steps:
+#      - uses: actions/checkout@master
+#      - uses: actions/setup-go@v2.1.4
+#        with:
+#          go-version: 1.19
+#      - run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build .
