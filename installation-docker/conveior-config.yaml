@@ -7,13 +7,13 @@ conveior-config:
         path: "/etc/ssl"
     dbs_mysql:
       - name: "mailu-mysql"
-        username: "root" # optional - otherwise will use root
-        password: "secretPass" # optional - otherwise will pick from env variable MYSQL_ROOT_PASSWORD
+        # username: "root" # optional - otherwise will use root
+        # password: "secretPass" # optional - otherwise will pick from env variable MYSQL_ROOT_PASSWORD
         encrypt: true # optional - will encrypt the zip with the sql password
     dbs_pgsql:
       - name: "sys-gitlab-postgresql"
-        username: "root" # optional - otherwise will pick from env variable POSTGRES_USER
-        password: "secretPass" # optional - otherwise will pick from env variable POSTGRES_PASSWORD_FILE
+        # username: "root" # optional - otherwise will pick from env variable POSTGRES_USER
+        # password: "secretPass" # optional - otherwise will pick from env variable POSTGRES_PASSWORD_FILE
         encrypt: true # optional - will encrypt the zip with the sql password
   metrics:
     pods_mysql:
