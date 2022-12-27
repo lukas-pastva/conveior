@@ -14,8 +14,18 @@ do
     export SERVER_DIR="/tmp/${POD_SHORT}"
     export FILE="${POD_SHORT}-${DATE}.sql"
     export DESTINATION_FILE="${SERVER_DIR}/${FILE}.gz"
-    export SQL_USER="root"
-    export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
+
+    # try to get username from config
+    export SQL_USER=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].username" /home/conveior-config.yaml)
+    if [[ "${SQL_USER}" == "null" ]]; then
+      export SQL_USER="root"
+    fi
+
+    # try to get passowrd from config
+    export SQL_PASS=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" /home/conveior-config.yaml)
+    if [[ "${SQL_PASS}" == "null" ]]; then
+      export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
+    fi
 
     mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
