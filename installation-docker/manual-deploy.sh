@@ -25,4 +25,4 @@ export IMAGE="lukaspastva/conveior:latest"
 docker stop conveior || true
 docker container rm conveior || true
 docker image rm ${IMAGE} || true
-docker run --name conveior -e "CONVEIOR_S3_KEY=${S3_KEY}" -e "CONVEIOR_S3_SECRET=${S3_SECRET}" -e "CONVEIOR_S3_URL=${S3_URL}" -d -v /var/run/docker.sock:/var/run/docker.sock  -v ./conveior-config.yaml:/home/conveior-config.yaml ${IMAGE} .
+docker run --name conveior -e "CONVEIOR_S3_KEY=${S3_KEY}" -e "CONVEIOR_S3_SECRET=${S3_SECRET}" -e "CONVEIOR_S3_URL=${S3_URL}" -d -v /var/run/docker.sock:/var/run/docker.sock  -v $(pwd)/:/home/ ${IMAGE} .
