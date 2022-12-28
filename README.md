@@ -26,11 +26,11 @@ Installation
 ### Standard Kubernetes installation
 - https://github.com/lukas-pastva/conveior/tree/main/installation-kubernetes
 - There are static Kubernetes manifests that will deploy conveior into daemon sets.
-- Also it will create ServiceMonitor that will be scraped by Prometheus.
+- Also, it will create ServiceMonitor that will be scraped by Prometheus.
 
 ### Docker installation
 - https://github.com/lukas-pastva/conveior/tree/main/installation-docker
-- In directory conveior-docker there is docker-compose file and bash file to help you installing conveior on your docker server.
+- In directory installation-docker there is manual-deploy.sh file to help you to instal conveior on your docker server.
 
 ### Backup features:
 - Backing up MySQL pods
