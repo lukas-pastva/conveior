@@ -21,7 +21,7 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod a+x /usr/local/bin/yq
+RUN curl https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq
 
 RUN mkdir -p /var/log /usr/share/nginx/logs && touch /var/log/cron.log
 RUN (crontab -l ; echo "0 19 * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1") | crontab
