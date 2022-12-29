@@ -1,5 +1,7 @@
 FROM debian:bullseye-slim
 
+WORKDIR /usr/local/bin
+
 RUN apt-get update -qq && \
     apt-get install -y -qq --no-install-recommends -o=Dpkg::Use-Pty=0 \
     apt-transport-https \
@@ -15,12 +17,11 @@ RUN apt-get update -qq && \
     procps \
     vim \
     unzip \
-    wget \
     zip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+RUN curl https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o yq && chmod a+x /usr/local/bin/yq
 
 RUN mkdir -p /var/log /usr/share/nginx/logs && touch /var/log/cron.log
 RUN (crontab -l ; echo "0 19 * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1") | crontab
@@ -29,7 +30,6 @@ COPY ./source-code/conveior/nginx.conf /etc/nginx/nginx.conf
 COPY ./source-code/conveior/bin /usr/local/bin
 RUN chmod -R +x /usr/local/bin
 
-WORKDIR /usr/local/bin
 EXPOSE 80
 USER root
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
