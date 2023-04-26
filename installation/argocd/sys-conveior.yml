@@ -1,0 +1,104 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sys-conveior
+  namespace: sys-argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: default
+  source:
+    repoURL: https://lukas-pastva.github.io/helm-chartie/
+      targetRevision: 0.1.48
+    chart: helm-chartie
+    helm:
+      values: |-
+        namespace: sys-conveior
+        type: DaemonSet
+        
+        pods:
+          - name: sys-conveior
+            repo: lukaspastva/conveior:0.1.52
+            resources: 100
+            volumes:
+              - name: sys-conveior
+                type: "hostPath"
+                mountPath: /run/containerd/containerd.sock
+                # mountPath: /var/run/docker.sock
+                readOnly: true
+                hostPath: /run/containerd/containerd.sock
+                # mountPath: /var/run/docker.sock
+              - name: conveior-config
+                type: "ConfigMap"
+                mountPath: /home/conveior-config.yaml
+                subPath: conveior-config.yaml
+            ports:
+              - name: http
+                port: 80
+            serviceMonitorEnabled: true
+            env:
+              - name: CONVEIOR_S3_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: sys-conveior
+                    key: CONVEIOR_S3_KEY
+              - name: CONVEIOR_S3_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: sys-conveior
+                    key: CONVEIOR_S3_SECRET
+              - name: CONVEIOR_S3_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: sys-conveior
+                    key: CONVEIOR_S3_URL
+        configMaps:
+          - name: conveior-config
+            data:
+              conveior-config.yaml: |-
+                conveior-config:
+                  bucket_type: "S3"
+                  bucket_name: "backup-fcm-sys"
+                  backups:
+                    dbs_mysql:
+                      - name: "sys-mysql-sql"
+                  metrics:
+                    pods_mysql:
+                      - name: sys-mysql-sql
+                        queries:
+                          - name: "conveior_mysql_table_size"
+                            query: "SELECT TABLE_NAME AS name, (data_length + index_length) AS value FROM information_schema.TABLES WHERE information_schema.TABLES.table_schema = 'database' and information_schema.TABLES.Table_Type = 'BASE TABLE'"
+                          - name: "conveior_mysql_local_wait_timeout"
+                            query: "select 'web-portal-sql' as name, @@session.wait_timeout as value"
+                          - name: "conveior_mysql_local_interactive_timeout"
+                            query: "select 'web-portal-sql' as name, @@session.interactive_timeout as value"
+                          - name: "conveior_mysql_global_wait_timeout"
+                            query: "select 'web-portal-sql' as name, @@global.wait_timeout as value"
+                          - name: "conveior_mysql_global_interactive_timeout"
+                            query: "select 'web-portal-sql' as name, @@global.interactive_timeout as value"
+                          - name: "conveior_mysql_sleeper_process"
+                            query: "select 'web-portal-sql' as name, count(*) as value from INFORMATION_SCHEMA.PROCESSLIST where command='Sleep'"
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: sys-conveior
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sys-conveior
+  namespace: sys-conveior
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+data:
+  CONVEIOR_S3_KEY: "=base64"
+  CONVEIOR_S3_SECRET: "=base64"
+  CONVEIOR_S3_URL: "=base64"
+type: Opaque

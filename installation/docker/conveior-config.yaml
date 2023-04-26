@@ -1,0 +1,46 @@
+conveior-config:
+  container_orchestrator: docker # kubectl
+  bucket_type: "S3"
+  bucket_name: "tronic"
+  prometheus_pushgateway: "http://sys-pushgw.sys-pushgw.svc.cluster.local:9091/metrics/job/conveior/entity/mltech" # if specified, each 5 minutes will push metrics to the URL
+  enableHwMonitoring: false
+  backups:
+    files:
+      - name: "mailu-resolver-1"
+        namespace: "sys-mailu" # if not on docker
+        path: "/etc/ssl"
+    dbs_mysql:
+      - name: "mailu-mysql"
+        namespace: "sys-mailu" # if not on docker
+        # username: "root" # optional - otherwise will use root
+        # password: "secretPass" # optional - otherwise will pick from env variable MYSQL_ROOT_PASSWORD
+        encrypt: true # optional - will encrypt the zip with the sql password
+    dbs_pgsql:
+      - name: "sys-gitlab-postgresql"
+        namespace: "sys-mailu" # if not on docker
+        # username: "root" # optional - otherwise will pick from env variable POSTGRES_USER
+        # password: "secretPass" # optional - otherwise will pick from env variable POSTGRES_PASSWORD_FILE
+        encrypt: true # optional - will encrypt the zip with the sql password
+  metrics:
+    elasticsearch:
+      - name: remp-elasticsearch
+        username: "${ELASTICSEARCH_USERNAME}"
+        password: "${ELASTICSEARCH_PASSWORD}"
+    pods_mysql:
+      - name: mailu-mysql
+        queries:
+          - name: "conveior_mysql_table_size"
+            query: "SELECT TABLE_NAME AS name, (data_length + index_length) AS value FROM information_schema.TABLES WHERE information_schema.TABLES.table_schema = 'database' and information_schema.TABLES.Table_Type = 'BASE TABLE'"
+          - name: "conveior_mysql_local_wait_timeout"
+            query: "select 'mailu-mysql' as name, @@session.wait_timeout as value"
+          - name: "conveior_mysql_local_interactive_timeout"
+            query: "select 'mailu-mysql' as name, @@session.interactive_timeout as value"
+          - name: "conveior_mysql_global_wait_timeout"
+            query: "select 'mailu-mysql' as name, @@global.wait_timeout as value"
+          - name: "conveior_mysql_global_interactive_timeout"
+            query: "select 'mailu-mysql' as name, @@global.interactive_timeout as value"
+          - name: "conveior_mysql_sleeper_process"
+            query: "select 'mailu-mysql' as name, count(*) as value from INFORMATION_SCHEMA.PROCESSLIST where command='Sleep'"
+    containers:
+      - name: conveior
+        type: info
