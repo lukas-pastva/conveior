@@ -10,7 +10,7 @@ do
   export POD_PATH=$(yq e ".conveior-config.backups.files | with_entries(select(.value.name == \"$POD\")) | .[].path" /home/conveior-config.yaml)
 
   export SERVER_DIR="/tmp/${POD}"
-  export FILE="$(( 10000000000 - $(date +%s) ))-${POD}-${DATE}"
+  export FILE="${ANTI_DATE}-${POD}-${DATE}"
   export ZIP_FILE_ONLY="${FILE}.zip"
   export ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
 

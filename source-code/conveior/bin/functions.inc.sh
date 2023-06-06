@@ -69,6 +69,7 @@ ${resource}" | openssl sha1 -hmac ${CONVEIOR_S3_SECRET} -binary | base64)
 
 export EPOCH=$(date +%s)
 export DATE=$(date +"%Y-%m-%dT%H-%M-%SZ")
+export ANTI_DATE=$(( 10000000000 - $(date +%s) ))
 export BUCKET_TYPE=$(yq e '.conveior-config.bucket_type' /home/conveior-config.yaml)
 export BUCKET_NAME=$(yq e '.conveior-config.bucket_name' /home/conveior-config.yaml)
 export CONTAINER_ORCHESTRATOR=$(yq e '.conveior-config.container_orchestrator' /home/conveior-config.yaml)
