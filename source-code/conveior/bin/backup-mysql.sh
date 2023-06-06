@@ -1,6 +1,8 @@
 #!/bin/bash
 source functions.inc.sh
 
+set -e
+
 export PODS=$(yq e '.conveior-config.backups.dbs_mysql.[].name' /home/conveior-config.yaml)
 export IFS=$'\n'
 for POD in $PODS;
@@ -10,7 +12,6 @@ do
   export DATABASES_STR=""
   export SERVER_DIR="/tmp/${POD}"
   export FILE="${POD}-${DATE}.sql"
-  export DESTINATION_FILE="${SERVER_DIR}/${FILE}.gz"
 
   # try to get username from config
   export SQL_USER=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].username" /home/conveior-config.yaml)
@@ -60,9 +61,20 @@ do
     fi
 
     rm "/${SERVER_DIR}/${FILE}"
-    upload_file "${ZIP_FILE}" "backup-mysql/${POD}/${ZIP_FILE_ONLY}"
 
+    echo_message "splitting"
+    split -a 1 -b 4096M -d "${ZIP_FILE}" "${ZIP_FILE}."
+
+    echo_message "deleting"
     rm "${ZIP_FILE}"
+
+    find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;
+    do
+      export SPLIT_FILE_ONLY=$(echo "${SPLIT_FILE}" | awk -F"/" '{print $(NF)}')
+      upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-mysql/${POD}/$(( 10000000000 - $(date +%s) ))-${DATE}/${SPLIT_FILE_ONLY}"
+      rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}"
+    done
+
   fi
 
 done

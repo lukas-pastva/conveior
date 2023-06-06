@@ -67,12 +67,10 @@ do
     echo_message "deleting"
     rm "${ZIP_FILE}"
 
-    echo_message "zipping-deleting-uploading-deleting"
     find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;
     do
       export SPLIT_FILE_ONLY=$(echo "${SPLIT_FILE}" | awk -F"/" '{print $(NF)}')
-      echo_message "Uploading ${SPLIT_FILE_ONLY}"
-      upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-elasticsearch/${DATE}/${SPLIT_FILE_ONLY}"
+      upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-elasticsearch/$(( 10000000000 - $(date +%s) ))-${DATE}/${SPLIT_FILE_ONLY}"
       rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}"
     done
 
