@@ -10,7 +10,7 @@ do
   echo_message "Backing up ${POD}"
 
   export SERVER_DIR="/tmp/${POD}"
-  export FILE="${POD}-${DATE}.sql"
+  export FILE="backup.sql"
   export DATABASES_STR=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].databases" /home/conveior-config.yaml)
 
   # try to get username from config
