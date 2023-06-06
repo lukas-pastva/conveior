@@ -5,7 +5,7 @@ export PODS=$(yq e '.conveior-config.backups.files.[].name' /home/conveior-confi
 export IFS=$'\n'
 for POD in $PODS;
 do
-  echo_message "Backing up $ITEM"
+  echo_message "Backing up $POD"
 
   export POD_PATH=$(yq e ".conveior-config.backups.files | with_entries(select(.value.name == \"$POD\")) | .[].path" /home/conveior-config.yaml)
 

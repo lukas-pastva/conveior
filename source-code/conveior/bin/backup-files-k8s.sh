@@ -5,7 +5,7 @@ export PODS=$(yq e '.conveior-config.backups.files.[].name' /home/conveior-confi
 export IFS=$'\n'
 for POD_SHORT in $PODS;
 do
-  echo_message "Backing up $ITEM"
+  echo_message "Backing up $POD_SHORT"
 
   export POD_NAMESPACE=$(yq e ".conveior-config.backups.files | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" /home/conveior-config.yaml)
   export POD=$(eval "kubectl -n ${POD_NAMESPACE} get pods --no-headers -o custom-columns=\":metadata.name\" | grep ${POD_SHORT}")
