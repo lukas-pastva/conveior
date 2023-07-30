@@ -34,7 +34,6 @@ do
     mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
 
-    echo "kubectl -n ${POD_NAMESPACE} exec -i ${POD} -- mysql -u ${SQL_USER} -p'${SQL_PASS}' -e \"show databases;\" 2>/dev/null"
     export DATABASE_ITEMS=$(eval "kubectl -n ${POD_NAMESPACE} exec -i ${POD} -- mysql -u ${SQL_USER} -p'${SQL_PASS}' -e \"show databases;\" 2>/dev/null" )
     export IFS=$'\n'
     for DATABASE_ITEM in $DATABASE_ITEMS;
