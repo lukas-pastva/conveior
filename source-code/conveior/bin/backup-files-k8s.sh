@@ -18,7 +18,7 @@ do
   mkdir -p "${SERVER_DIR}"
   find "${SERVER_DIR}" -mindepth 1 -delete
 
-  if [[ $(eval "kubectl -n ${POD_NAMESPACE} exec -i ${POD} -- bash -c \"cd ${POD_PATH} && ls | wc -l\"") != "0" ]]; then
+  if [[ $(eval "kubectl -n ${POD_NAMESPACE} exec -i ${POD} -- sh -c \"cd ${POD_PATH} && ls | wc -l\"") != "0" ]]; then
     eval "kubectl -n ${POD_NAMESPACE} cp ${POD}:${POD_PATH} ${SERVER_DIR}"
     cd "${SERVER_DIR}" && zip -rqq "${ZIP_FILE}" "."
 
