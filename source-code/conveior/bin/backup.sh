@@ -9,7 +9,6 @@ if [[ "${CONTAINER_ORCHESTRATOR}" == "docker" ]]; then
   backup-mysql.sh
   backup-pgsql.sh
   backup-files.sh
-  # backup-elastic.sh
 fi
 
 if [[ "${CONTAINER_ORCHESTRATOR}" == "kubernetes" ]]; then
