@@ -54,7 +54,7 @@ do
       fi
 
       rm "/${SERVER_DIR}/${FILE}"
-      upload_file "${ZIP_FILE}" "backup-pgsql/${POD}/${ZIP_FILE_ONLY}"
+      upload_file "${ZIP_FILE}" "backup-pgsql/${POD}/${DATABASE_ITEM}/${ZIP_FILE_ONLY}"
 
       rm "${ZIP_FILE}"
     fi

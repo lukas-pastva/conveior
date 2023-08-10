@@ -13,5 +13,6 @@ fi
 
 if [[ "${CONTAINER_ORCHESTRATOR}" == "kubernetes" ]]; then
   backup-mysql-k8s.sh
+  backup-pgsql-k8s.sh
   backup-files-k8s.sh
 fi
