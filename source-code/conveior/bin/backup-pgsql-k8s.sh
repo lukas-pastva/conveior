@@ -10,7 +10,6 @@ do
   export POD_NAMESPACE=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" /home/conveior-config.yaml)
   export POD_LIST=$(eval "kubectl -n ${POD_NAMESPACE} get pods --no-headers -o custom-columns=\":metadata.name\" | grep ${POD_SHORT}")
 
-  # workaround if fount more pods
   for POD in $POD_LIST;
   do
     export DATABASES_STR=""
