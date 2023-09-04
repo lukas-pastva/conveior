@@ -1,27 +1,27 @@
 #!/bin/bash
 source functions.inc.sh
 
-export PODS=$(yq e '.conveior-config.metrics.pods_mysql.[].name' /home/conveior-config.yaml)
+export PODS=$(yq e '.config.metrics.pods_mysql.[].name' ${CONFIG_FILE_DIR})
 export METRICS=""
 export IFS=$'\n'
 for POD in $PODS;
 do
   if [[ "${POD}" != "" ]]; then
     # try to get username from config
-    export SQL_USER=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].username" /home/conveior-config.yaml)
+    export SQL_USER=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].username" ${CONFIG_FILE_DIR})
     if [[ "${SQL_USER}" == "null" ]]; then
       export SQL_USER="root"
     fi
 
     # try to get password from config
-    export SQL_PASS=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].password" /home/conveior-config.yaml)
+    export SQL_PASS=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].password" ${CONFIG_FILE_DIR})
     if [[ "${SQL_PASS}" == "null" ]]; then
       export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
     fi
 
     while read QUERY_NAME;
     do
-      QUERY=$(yq e ".conveior-config.metrics.pods_mysql | with_entries(select(.value.name == \"$POD\")) | .[].queries | with_entries(select(.value.name == \"$QUERY_NAME\" )) | .[].query" /home/conveior-config.yaml)
+      QUERY=$(yq e ".config.metrics.pods_mysql | with_entries(select(.value.name == \"$POD\")) | .[].queries | with_entries(select(.value.name == \"$QUERY_NAME\" )) | .[].query" ${CONFIG_FILE_DIR})
       if [[ "${QUERY^^}" != *"DROP"* ]]; then
         if [[ "${QUERY^^}" != *"UPDATE"* ]]; then
           if [[ "${QUERY^^}" != *"TRUNCATE"* ]]; then
@@ -50,11 +50,11 @@ do
           fi
         fi
       fi
-    done < <(yq e ".conveior-config.metrics.pods_mysql | with_entries(select(.value.name == \"$POD\")) | .[].queries.[].name" /home/conveior-config.yaml)
+    done < <(yq e ".config.metrics.pods_mysql | with_entries(select(.value.name == \"$POD\")) | .[].queries.[].name" ${CONFIG_FILE_DIR})
   fi
 done
 
-GW_URL=$(yq e ".conveior-config.prometheus_pushgateway" /home/conveior-config.yaml)
+GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
 if [ -z "$GW_URL" ]; then
   echo -e "$METRICS"
 else

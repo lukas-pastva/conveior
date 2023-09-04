@@ -22,13 +22,13 @@ if [[ "${POD}" != "" ]]; then
   cd /tmp/restore && unzip -qq backup.zip && rm backup.zip
 
   # try to get username from config
-  export SQL_USER=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].username" /home/conveior-config.yaml)
+  export SQL_USER=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].username" ${CONFIG_FILE_DIR})
   if [[ "${SQL_USER}" == "null" ]]; then
     export SQL_USER="root"
   fi
 
   # try to get password from config
-  export SQL_PASS=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" /home/conveior-config.yaml)
+  export SQL_PASS=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" ${CONFIG_FILE_DIR})
   if [[ "${SQL_PASS}" == "null" ]]; then
     export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
   fi

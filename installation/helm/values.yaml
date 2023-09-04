@@ -14,37 +14,24 @@ pods:
         readOnly: true
         hostPath: /run/containerd/containerd.sock
         # mountPath: /var/run/docker.sock
-      - name: conveior-config
+      - name: config
         type: "ConfigMap"
-        mountPath: /home/conveior-config.yaml
-        subPath: conveior-config.yaml
+        mountPath: ${CONFIG_FILE_DIR}
+        subPath: config.yaml
     ports:
       - name: http
         port: 80
     serviceMonitorEnabled: true
-    env:
-      - name: CONVEIOR_S3_KEY
-        valueFrom:
-          secretKeyRef:
-            name: sys-conveior
-            key: CONVEIOR_S3_KEY
-      - name: CONVEIOR_S3_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: sys-conveior
-            key: CONVEIOR_S3_SECRET
-      - name: CONVEIOR_S3_URL
-        valueFrom:
-          secretKeyRef:
-            name: sys-conveior
-            key: CONVEIOR_S3_URL
 configMaps:
-  - name: conveior-config
+  - name: config
     data:
-      conveior-config.yaml: |-
-        conveior-config:
+      config.yaml: |-
+        config:
           bucket_type: "S3"
           bucket_name: "backup-fcm-sys"
+          s3_url: "asdf"
+          s3_key: "asdf"
+          s3_secret: "asdf"
           backups:
             dbs_mysql:
               - name: "sys-mysql-sql"

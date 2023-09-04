@@ -1,7 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 
-export PODS=$(yq e '.conveior-config.backups.dbs_postgresql.[].name' /home/conveior-config.yaml)
+export PODS=$(yq e '.config.backups.dbs_postgresql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
 for POD in $PODS;
 do
@@ -13,13 +13,13 @@ do
   export DESTINATION_FILE="${SERVER_DIR}/${FILE}.gz"
 
   # try to get username from config
-  export SQL_USER=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD\")) | .[].username" /home/conveior-config.yaml)
+  export SQL_USER=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD\")) | .[].username" ${CONFIG_FILE_DIR})
   if [[ "${SQL_USER}" == "null" ]]; then
     export SQL_USER=$(docker exec -i ${POD} bash -c 'echo ${POSTGRES_USER}')
   fi
 
   # try to get password from config
-  export SQL_PASS=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD\")) | .[].password" /home/conveior-config.yaml)
+  export SQL_PASS=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD\")) | .[].password" ${CONFIG_FILE_DIR})
   if [[ "${SQL_PASS}" == "null" ]]; then
     export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${POSTGRES_PASSWORD}')
   fi
@@ -46,7 +46,7 @@ do
       export ZIP_FILE_ONLY="${FILE}.zip"
       export ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
 
-      ENCRYPT=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD\")) | .[].encrypt" /home/conveior-config.yaml)
+      ENCRYPT=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD\")) | .[].encrypt" ${CONFIG_FILE_DIR})
       if [ "${ENCRYPT}" == "true" ]; then
         zip -qq --password "${SQL_PASS}" "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
       else

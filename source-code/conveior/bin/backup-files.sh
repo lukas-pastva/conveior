@@ -1,13 +1,13 @@
 #!/bin/bash
 source functions.inc.sh
 
-export PODS=$(yq e '.conveior-config.backups.files.[].name' /home/conveior-config.yaml)
+export PODS=$(yq e '.config.backups.files.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
 for POD in $PODS;
 do
   echo_message "Backing up $POD"
 
-  export POD_PATH=$(yq e ".conveior-config.backups.files | with_entries(select(.value.name == \"$POD\")) | .[].path" /home/conveior-config.yaml)
+  export POD_PATH=$(yq e ".config.backups.files | with_entries(select(.value.name == \"$POD\")) | .[].path" ${CONFIG_FILE_DIR})
 
   export SERVER_DIR="/tmp/${POD}"
   export FILE="${ANTI_DATE}-${POD}-${DATE}"

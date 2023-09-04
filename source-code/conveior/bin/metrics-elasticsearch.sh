@@ -1,14 +1,14 @@
 #!/bin/bash
 source functions.inc.sh
 
-export PODS=$(yq e '.conveior-config.metrics.elasticsearch.[].name' /home/conveior-config.yaml)
+export PODS=$(yq e '.config.metrics.elasticsearch.[].name' ${CONFIG_FILE_DIR})
 export METRICS=""
 export IFS=$'\n'
 for POD in $PODS;
 do
   if [[ "${POD}" != "" ]]; then
-    export ELASTICSEARCH_USERNAME=$(yq e ".conveior-config.metrics.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].username" /home/conveior-config.yaml)
-    export ELASTICSEARCH_PASSWORD=$(yq e ".conveior-config.metrics.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].password" /home/conveior-config.yaml)
+    export ELASTICSEARCH_USERNAME=$(yq e ".config.metrics.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].username" ${CONFIG_FILE_DIR})
+    export ELASTICSEARCH_PASSWORD=$(yq e ".config.metrics.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].password" ${CONFIG_FILE_DIR})
 
     export DATA=$(docker exec -i ${POD} curl -s --user "${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}" http://127.0.0.1:9200/_cat/indices)
 
@@ -25,7 +25,7 @@ do
   fi
 done
 
-GW_URL=$(yq e ".conveior-config.prometheus_pushgateway" /home/conveior-config.yaml)
+GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
 if [ -z "$GW_URL" ]; then
   echo -e "$METRICS"
 else

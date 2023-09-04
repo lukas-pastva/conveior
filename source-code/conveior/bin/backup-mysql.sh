@@ -3,7 +3,7 @@ source functions.inc.sh
 
 set -e
 
-export PODS=$(yq e '.conveior-config.backups.dbs_mysql.[].name' /home/conveior-config.yaml)
+export PODS=$(yq e '.config.backups.dbs_mysql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
 for POD in $PODS;
 do
@@ -11,16 +11,16 @@ do
 
   export SERVER_DIR="/tmp/${POD}"
   export FILE="backup.sql"
-  export DATABASES_STR=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].databases" /home/conveior-config.yaml)
+  export DATABASES_STR=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].databases" ${CONFIG_FILE_DIR})
 
   # try to get username from config
-  export SQL_USER=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].username" /home/conveior-config.yaml)
+  export SQL_USER=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].username" ${CONFIG_FILE_DIR})
   if [[ "${SQL_USER}" == "null" ]]; then
     export SQL_USER="root"
   fi
 
   # try to get password from config
-  export SQL_PASS=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].password" /home/conveior-config.yaml)
+  export SQL_PASS=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].password" ${CONFIG_FILE_DIR})
   if [[ "${SQL_PASS}" == "null" ]]; then
     export SQL_PASS=$(docker exec -i ${POD} bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
   fi
@@ -35,7 +35,7 @@ do
   export ZIP_FILE_ONLY="${FILE}.zip"
   export ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
 
-  ENCRYPT=$(yq e ".conveior-config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].encrypt" /home/conveior-config.yaml)
+  ENCRYPT=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD\")) | .[].encrypt" ${CONFIG_FILE_DIR})
   if [ "${ENCRYPT}" == "true" ]; then
     zip -qq --password "${SQL_PASS}" "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
   else

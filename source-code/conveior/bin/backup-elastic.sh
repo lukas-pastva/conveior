@@ -3,13 +3,13 @@ source functions.inc.sh
 
 set -e
 
-export PODS=$(yq e '.conveior-config.backups.elasticsearch.[].name' /home/conveior-config.yaml)
+export PODS=$(yq e '.config.backups.elasticsearch.[].name' ${CONFIG_FILE_DIR})
 export IFS=$','
 for POD in $PODS;
 do
 
-  export ELASTIC_USER=$(yq e ".conveior-config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].username" /home/conveior-config.yaml)
-  export ELASTIC_PASSWD=$(yq e ".conveior-config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].password" /home/conveior-config.yaml)
+  export ELASTIC_USER=$(yq e ".config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].username" ${CONFIG_FILE_DIR})
+  export ELASTIC_PASSWD=$(yq e ".config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].password" ${CONFIG_FILE_DIR})
 
   export VOLUME="/tmp/backup/"
   export SERVER_DIR="/tmp/${POD}"

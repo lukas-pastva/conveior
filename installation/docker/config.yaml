@@ -1,4 +1,4 @@
-conveior-config:
+config:
   container_orchestrator: docker # kubernetes
   bucket_type: "S3"
   bucket_name: "tronic"
@@ -23,7 +23,7 @@ conveior-config:
         encrypt: true # optional - will encrypt the zip with the sql password
   metrics:
     elasticsearch:
-      - name: remp-elasticsearch
+      - name: elasticsearch
         username: "${ELASTICSEARCH_USERNAME}"
         password: "${ELASTICSEARCH_PASSWORD}"
     pods_mysql:

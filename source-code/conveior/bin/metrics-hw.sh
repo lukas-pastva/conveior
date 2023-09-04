@@ -149,7 +149,7 @@ do
 
 done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
 
-GW_URL=$(yq e ".conveior-config.prometheus_pushgateway" /home/conveior-config.yaml)
+GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
 if [ -z "$GW_URL" ]; then
   echo -e "$METRICS"
 else

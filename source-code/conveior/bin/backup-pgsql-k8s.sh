@@ -1,13 +1,13 @@
 #!/bin/bash
 source functions.inc.sh
 
-export POD_SHORT_LIST=$(yq e '.conveior-config.backups.dbs_postgresql.[].name' /home/conveior-config.yaml)
+export POD_SHORT_LIST=$(yq e '.config.backups.dbs_postgresql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
 for POD_SHORT in $POD_SHORT_LIST;
 do
   echo_message "Backing up ${POD_SHORT}"
 
-  export POD_NAMESPACE=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" /home/conveior-config.yaml)
+  export POD_NAMESPACE=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" ${CONFIG_FILE_DIR})
   export POD_LIST=$(eval "kubectl -n ${POD_NAMESPACE} get pods --no-headers -o custom-columns=\":metadata.name\" | grep ${POD_SHORT}")
 
   for POD in $POD_LIST;
@@ -17,8 +17,8 @@ do
     export FILE="${POD_SHORT}-${DATE}.sql"
     export DESTINATION_FILE="${SERVER_DIR}/${FILE}.gz"
 
-    export SQL_USER=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].username" /home/conveior-config.yaml)
-    export SQL_PASS=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" /home/conveior-config.yaml)
+    export SQL_USER=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].username" ${CONFIG_FILE_DIR})
+    export SQL_PASS=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" ${CONFIG_FILE_DIR})
     echo "POD: $POD"
 
     mkdir -p "${SERVER_DIR}"
@@ -42,7 +42,7 @@ do
         export ZIP_FILE_ONLY="${FILE}.zip"
         export ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
 
-        ENCRYPT=$(yq e ".conveior-config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].encrypt" /home/conveior-config.yaml)
+        ENCRYPT=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].encrypt" ${CONFIG_FILE_DIR})
         if [ "${ENCRYPT}" == "true" ]; then
           zip -qq --password "${SQL_PASS}" "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
         else
