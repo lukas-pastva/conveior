@@ -22,6 +22,10 @@ pods:
       - name: http
         port: 80
     serviceMonitorEnabled: true
+    env:
+      - name: CONFIG_FILE_DIR
+        value: "/home/config.yaml"
+
 configMaps:
   - name: config
     data:
