@@ -66,3 +66,17 @@ ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
 
   curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
 }
+
+# init
+if [[ -z ${CONFIG_FILE_DIR} ]]; then
+  export CONFIG_FILE_DIR="/home/config.yaml"
+fi
+export EPOCH=$(date +%s)
+export DATE=$(date +"%Y-%m-%dT%H-%M-%SZ")
+export ANTI_DATE=$(( 10000000000 - $(date +%s) ))
+export BUCKET_TYPE=$(yq e '.config.bucket_type' ${CONFIG_FILE_DIR})
+export BUCKET_NAME=$(yq e '.config.bucket_name' ${CONFIG_FILE_DIR})
+export S3_URL=$(yq e '.config.s3_url' ${CONFIG_FILE_DIR}) || true
+export S3_KEY=$(yq e '.config.s3_key' ${CONFIG_FILE_DIR}) || true
+export S3_SECRET=$(yq e '.config.s3_secret' ${CONFIG_FILE_DIR}) || true
+export CONTAINER_ORCHESTRATOR=$(yq e '.config.container_orchestrator' ${CONFIG_FILE_DIR})
