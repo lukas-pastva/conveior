@@ -27,5 +27,3 @@ jobs:
           docker tag controller:latest registry.hub.docker.com/lukaspastva/${{ github.event.repository.name }}-operator:${VERSION}
           docker push registry.hub.docker.com/lukaspastva/${{ github.event.repository.name }}-operator:latest
           docker push registry.hub.docker.com/lukaspastva/${{ github.event.repository.name }}-operator:${VERSION}
-
-
