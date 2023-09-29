@@ -19,7 +19,7 @@ spec:
         
         pods:
           - name: sys-conveior
-            repo: lukaspastva/conveior:0.1.52
+            repo: lukaspastva/conveior:0.1.12
             resources: 100
             volumes:
               - name: sys-conveior
