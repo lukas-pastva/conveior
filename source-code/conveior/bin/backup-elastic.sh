@@ -62,7 +62,7 @@ do
     docker exec -i ${POD} rm ${VOLUME}/${FILE}.zip
 
     echo_message "splitting"
-    split -a 1 -b 51200M -d "${ZIP_FILE}" "${ZIP_FILE}."
+    split -a 1 -b 5G -d "${ZIP_FILE}" "${ZIP_FILE}."
 
     echo_message "deleting"
     rm "${ZIP_FILE}"
