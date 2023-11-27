@@ -85,7 +85,11 @@ done
 # MIGRATION:
 #if grep -Fq "path.repo:" "/usr/share/elasticsearch/config/elasticsearch.yml"; then  echo "config already set"; else   echo "setting config";  mkdir -p /tmp/backup;  chown elasticsearch:elasticsearch /tmp/backup;  echo "path.repo: [\"/tmp/backup\"]" >> /usr/share/elasticsearch/config/elasticsearch.yml;  fi
 
-# curl -sX GET "127.0.0.1:9200/_snapshot?pretty"
+# get backup repos
+# curl -X GET --user "${ELASTIC_USER}:${ELASTIC_PASSWORD}" "127.0.0.1:9200/_snapshot?pretty"
+# delete backup repo
+# curl -X DELETE --user "${ELASTIC_USER}:${ELASTIC_PASSWORD}" "localhost:9200/_snapshot/backup_repository?pretty"
+
 
 # OPTIONAL:
 #  docker exec -it ${POD} bash -c 'curl -sX GET "127.0.0.1:9200/_cat/repositories"'
