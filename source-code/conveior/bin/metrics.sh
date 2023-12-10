@@ -16,4 +16,3 @@ ENABLE_HW_MONITORING=$(yq e ".config.enableHwMonitoring" ${CONFIG_FILE_DIR})
 if [[ "${ENABLE_HW_MONITORING}" == "true" ]]; then
   metrics-hw.sh
 fi
-
