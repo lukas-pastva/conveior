@@ -19,7 +19,7 @@ spec:
         
         pods:
           - name: sys-conveior
-            repo: lukaspastva/conveior:0.1.12
+            repo: lukaspastva/conveior:latest
             resources: 100
             volumes:
               - name: sys-conveior
@@ -66,6 +66,9 @@ spec:
                             query: "select 'web-portal-sql' as name, @@global.interactive_timeout as value"
                           - name: "conveior_mysql_sleeper_process"
                             query: "select 'web-portal-sql' as name, count(*) as value from INFORMATION_SCHEMA.PROCESSLIST where command='Sleep'"
+                  forwarder:
+                    - name: node-exporter
+                      pushGw: "http://pushgw:9091/metrics/job/node-exporter/entity/server-name"
 
   destination:
     server: "https://kubernetes.default.svc"

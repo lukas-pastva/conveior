@@ -2,7 +2,7 @@ config:
   container_orchestrator: docker # kubernetes
   bucket_type: "S3"
   bucket_name: "tronic"
-  prometheus_pushgateway: "http://sys-pushgw.sys-pushgw.svc.cluster.local:9091/metrics/job/conveior/entity/mltech" # if specified, each 5 minutes will push metrics to the URL
+  prometheus_pushgateway: "http://pushgw:9091/metrics/job/conveior/entity/mltech" # if specified, each 5 minutes will push metrics to the URL
   enableHwMonitoring: false
   backups:
     files:
@@ -44,3 +44,6 @@ config:
     containers:
       - name: conveior
         type: info
+  forwarder:
+      - name: node-exporter
+        pushGw: "http://pushgw:9091/metrics/job/node-exporter/entity/server-name"

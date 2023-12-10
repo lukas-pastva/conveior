@@ -5,6 +5,8 @@ source functions.inc.sh
 
 metrics-mysql.sh
 
+metrics-forwarder.sh
+
 if [[ "${CONTAINER_ORCHESTRATOR}" == "docker" ]]; then
   metrics-container.sh
   metrics-elasticsearch.sh
