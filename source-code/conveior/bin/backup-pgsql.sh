@@ -35,7 +35,8 @@ do
   for DATABASE_ITEM in $DATABASE_ITEMS;
   do
     if [[ "template0,template1,postgres" == *"${DATABASE_ITEM}"* ]]; then
-      echo "Skipping $DATABASE_ITEM"
+      # echo "Skipping $DATABASE_ITEM"
+      echo " "
     else
       echo "Backing up DB: $DATABASE_ITEM"
       docker exec -i "${POD}" bash -c "PGPASSWORD=$(echo $SQL_PASS) pg_dump -U ${SQL_USER} -d ${DATABASE_ITEM} > /tmp/${FILE}"

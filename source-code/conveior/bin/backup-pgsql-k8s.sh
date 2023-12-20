@@ -31,7 +31,8 @@ do
       # trim whitespaces
       DATABASE_ITEM=$(echo $DATABASE_ITEM | sed 's/^ *//')
       if [[ "template0,template1,postgres" == *"${DATABASE_ITEM}"* ]]; then
-        echo "Skipping $DATABASE_ITEM"
+        # echo "Skipping $DATABASE_ITEM"
+        echo " "
       else
         echo "Backing up DB: $DATABASE_ITEM"
 
