@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     repoURL: https://lukas-pastva.github.io/helm-chartie/
-      targetRevision: 0.1.48
+    targetRevision: 0.1.21
     chart: helm-chartie
     helm:
       values: |-
@@ -21,6 +21,7 @@ spec:
           - name: sys-conveior
             repo: lukaspastva/conveior:latest
             resources: 100
+            # TODO podSecurityContextRestricted: true
             volumes:
               - name: sys-conveior
                 type: "hostPath"
@@ -36,7 +37,8 @@ spec:
             ports:
               - name: http
                 port: 80
-            serviceMonitorEnabled: true
+            serviceMonitor:
+              enabled: true
         configMaps:
           - name: config
             data:
