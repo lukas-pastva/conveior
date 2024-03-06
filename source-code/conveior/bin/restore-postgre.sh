@@ -2,11 +2,11 @@
 
 # Define variables
 POD_NAME="weblate-postgresql-0"
-NAMESPACE="weblate" # Updated to your specified namespace
+NAMESPACE="weblate"
 BACKUP_FILE="backup.sql"
 DATABASE_ENV_VAR="POSTGRES_DATABASE"
 PASSWORD_ENV_VAR="POSTGRES_PASSWORD"
-CONTAINER_NAME="postgres" # Ensure this matches the name of your PostgreSQL container
+CONTAINER_NAME="postgresql"
 
 # Copy backup file to the pod
 kubectl cp "./$BACKUP_FILE" "$NAMESPACE/$POD_NAME:/tmp/$BACKUP_FILE"
