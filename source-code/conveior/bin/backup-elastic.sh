@@ -58,8 +58,8 @@ do
     echo_message "Copying ${POD}:${VOLUME}${FILE}.zip"
     docker cp ${POD}:${VOLUME}${FILE}.zip ${SERVER_DIR}
 
-    echo_message "Deleting ${VOLUME}/${FILE}.zip"
-    docker exec -i ${POD} rm ${VOLUME}/${FILE}.zip
+    echo_message "Deleting ${VOLUME}${FILE}.zip"
+    docker exec -i ${POD} rm ${VOLUME}${FILE}.zip
 
     echo_message "Splitting ${ZIP_FILE}"
     split -a 1 -b 5G -d "${ZIP_FILE}" "${ZIP_FILE}."
