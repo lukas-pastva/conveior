@@ -46,35 +46,36 @@ do
       fi
     done
 
-    echo_message "Zipping-deleting-copying-deleting-splitting-deleting-uploading-deleting backups"
+    echo_message "Performing Elasticsearch backup process"
 
-    echo_message "zipping"
+    echo_message "Zipping ${VOLUME}/${FILE}"
     docker exec -i ${POD} zip -rqq ${VOLUME}/${FILE} ${VOLUME}
 
-    echo_message "deleting"
+    echo_message "Deleting elasticsearch backup"
     docker exec -i ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX GET 127.0.0.1:9200/_cat/snapshots/backup_repository | awk '{print \$1}' | while read SNAPSHOT ; do curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX DELETE 127.0.0.1:9200/_snapshot/backup_repository/\${SNAPSHOT}; done"
     sleep 30
 
-    echo_message "copying"
+    echo_message "Copying ${POD}:${VOLUME}${FILE}.zip"
     docker cp ${POD}:${VOLUME}${FILE}.zip ${SERVER_DIR}
 
-    echo_message "deleting"
+    echo_message "Deleting ${VOLUME}/${FILE}.zip"
     docker exec -i ${POD} rm ${VOLUME}/${FILE}.zip
 
-    echo_message "splitting"
+    echo_message "Splitting ${ZIP_FILE}"
     split -a 1 -b 5G -d "${ZIP_FILE}" "${ZIP_FILE}."
 
-    echo_message "deleting"
+    echo_message "Deleting ${ZIP_FILE}"
     rm "${ZIP_FILE}"
 
     find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;
     do
       export SPLIT_FILE_ONLY=$(echo "${SPLIT_FILE}" | awk -F"/" '{print $(NF)}')
       upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-elasticsearch/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}"
-      rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}"
+      echo_message "Deleting ${SERVER_DIR}/${SPLIT_FILE_ONLY} || true"
+      rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}" || true
     done
 
-    echo_message "deleting the backup from elasticsearch"
+    echo_message "Deleting the backup from elasticsearch"
     find "${SERVER_DIR}" -mindepth 1 -delete
 
   else

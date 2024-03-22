@@ -44,10 +44,10 @@ do
 
   rm "/${SERVER_DIR}/${FILE}"
 
-  echo_message "splitting"
+  echo_message "Splitting"
   split -a 1 -b 4096M -d "${ZIP_FILE}" "${ZIP_FILE}."
 
-  echo_message "deleting"
+  echo_message "Deleting"
   rm "${ZIP_FILE}"
 
   find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;

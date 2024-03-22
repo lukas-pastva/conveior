@@ -2,7 +2,7 @@
 #set -e
 
 function echo_message {
-  echo -e "\n# $1"
+  echo -e "\n$(date -u +"%Y-%m-%dT%H:%M:%SZ") # $1"
 }
 
 function download_file {
