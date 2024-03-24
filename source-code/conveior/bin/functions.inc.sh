@@ -69,18 +69,20 @@ ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
 
   curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
 }
+
 function upload_file_s3_v4 () {
   ZIP_FILE="${1}"
   FILE_S3="${2}"
   contentType="application/x-zip-compressed"
   dateValue=$(date -u +'%Y%m%dT%H%M%SZ') # ISO8601 format
-  region="auto"desc
+  region="auto"
   service="s3"
   awsKey="${S3_KEY}"
   awsSecret="${S3_SECRET}"
 
   # Create a string to sign
-  stringToSign="AWS4-HMAC-SHA256\n${dateValue}\n${dateValue:0:8}/${region}/${service}/aws4_request\n$(echo -n -e "PUT\n/${BUCKET_NAME}/${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL}\n\ncontent-type;host\n$(echo -n -e "${contentType}\n${dateValue}\nhost\n" | openssl sha256 -hex)\n$(echo -n -e "UNSIGNED-PAYLOAD" | openssl sha256 -hex)"
+  stringToSign="AWS4-HMAC-SHA256\n${dateValue}\n${dateValue:0:8}/${region}/${service}/aws4_request\n$(echo -n -e "PUT\n/${BUCKET_NAME}/${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL}\n\ncontent-type;host\n$(echo -n -e "${contentType}\n${dateValue}\nhost\n" | openssl sha256 -hex)\n$(echo -n -e "UNSIGNED-PAYLOAD" | openssl sha256 -hex))"
+
 
   # Calculate the signature
   signature=$(printf "${stringToSign}" | openssl sha256 -hex -mac HMAC -macopt "hexkey:${awsSecret}" | sed 's/^.* //')
