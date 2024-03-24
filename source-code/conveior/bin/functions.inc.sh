@@ -74,7 +74,7 @@ function upload_file_s3_v4 () {
   FILE_S3="${2}"
   contentType="application/x-zip-compressed"
   dateValue=$(date -u +'%Y%m%dT%H%M%SZ') # ISO8601 format
-  region="auto"
+  region="auto"desc
   service="s3"
   awsKey="${S3_KEY}"
   awsSecret="${S3_SECRET}"
