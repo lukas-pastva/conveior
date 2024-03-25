@@ -32,7 +32,6 @@ configMaps:
     data:
       config.yaml: |-
         config:
-          bucket_type: "S3"
           bucket_name: "backup-fcm-sys"
           s3_url: "asdf"
           s3_key: "asdf"
