@@ -76,7 +76,7 @@ upload_file_s3_v4 () {
   local contentType="application/x-zip-compressed"
   local dateValue
   dateValue=$(date -u +'%Y%m%dT%H%M%SZ') || { echo "Error: Unable to get date." >&2; return 1; }
-  local region="auto"
+  local region="weur"
   local service="s3"
 
   # Calculate content SHA256
@@ -99,12 +99,24 @@ EOF
 
   # Calculate the signature
   local signature
+  echo "S3_KEY: $S3_KEY"
+  echo "S3_SECRET: $S3_SECRET"
   signature=$(printf "${stringToSign}" | openssl sha256 -hex -mac HMAC -macopt "hexkey:${S3_SECRET}" | sed 's/^.* //') || { echo "Error: Unable to calculate signature." >&2; return 1; }
 
   # Debug: Print the calculated signature
   echo "Debug: Calculated Signature: $signature"
 
   echo "Uploading into ${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
+
+  # Debug: Print the curl command
+  echo "Debug: Curl Command:"
+  echo "curl -v -X PUT -T \"${ZIP_FILE}\" \
+    -H \"Content-Type: ${contentType}\" \
+    -H \"Host: ${S3_URL#https://}\" \
+    -H \"X-Amz-Date: ${dateValue}\" \
+    -H \"X-Amz-Content-SHA256: ${contentSha256}\" \
+    -H \"Authorization: AWS4-HMAC-SHA256 Credential=${S3_KEY}/${dateValue:0:8}/${region}/${service}/aws4_request,SignedHeaders=content-type;host;x-amz-date;x-amz-content-sha256,Signature=${signature}\" \
+    \"${S3_URL}/${BUCKET_NAME}/${FILE_S3}\""
 
   # Make the PUT request
   curl -v -X PUT -T "${ZIP_FILE}" \
@@ -115,6 +127,7 @@ EOF
     -H "Authorization: AWS4-HMAC-SHA256 Credential=${S3_KEY}/${dateValue:0:8}/${region}/${service}/aws4_request,SignedHeaders=content-type;host;x-amz-date;x-amz-content-sha256,Signature=${signature}" \
     "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" || { echo "Error: Unable to upload file." >&2; return 1; }
 }
+
 
 
 
