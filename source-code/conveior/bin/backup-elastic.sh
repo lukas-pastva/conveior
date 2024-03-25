@@ -73,7 +73,7 @@ do
 
       # upload file
       mkdir -p /tmp/s3/backup-elasticsearch/${ANTI_DATE}-${DATE}/
-      mv "${SERVER_DIR}/${SPLIT_FILE_ONLY}" /tmp/s3/backup-elasticsearch/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}
+      cp "${SERVER_DIR}/${SPLIT_FILE_ONLY}" /tmp/s3/backup-elasticsearch/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}
       rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}" || true
     done
 

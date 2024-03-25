@@ -53,7 +53,7 @@ do
         rm "/${SERVER_DIR}/${FILE}"
         # upload file
         mkdir -p /tmp/s3/backup-pgsql/${POD_SHORT}/${DATABASE_ITEM}/
-        mv "${ZIP_FILE}" /tmp/s3/backup-pgsql/${POD_SHORT}/${DATABASE_ITEM}/${ZIP_FILE_ONLY}
+        cp "${ZIP_FILE}" /tmp/s3/backup-pgsql/${POD_SHORT}/${DATABASE_ITEM}/${ZIP_FILE_ONLY}
         rm "${ZIP_FILE}"
       fi
     done
