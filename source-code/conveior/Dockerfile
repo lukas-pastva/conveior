@@ -21,6 +21,8 @@ RUN apt-get update -qq && \
     vim \
     libzip-dev \
     procps \
+    s3cmd \
+    s3fs \
     unzip \
     zip && \
     apt-get clean && \

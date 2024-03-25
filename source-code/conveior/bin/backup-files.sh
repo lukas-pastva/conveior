@@ -22,7 +22,9 @@ do
     export LAST_DIR=$(echo ${POD_PATH} | awk -F"/" '{print $NF}')
     cd "${SERVER_DIR}/${LAST_DIR}" && zip -rqq "${ZIP_FILE}" "."
 
-    upload_file "${ZIP_FILE}" "backup-file/${POD}/${ZIP_FILE_ONLY}"
+    # upload file
+    mkdir -p /tmp/s3/backup-file/${POD}/
+    cp "${ZIP_FILE}" /tmp/s3/backup-file/${POD}/${ZIP_FILE_ONLY}
     find "${SERVER_DIR}" -mindepth 1 -delete
   fi
 done

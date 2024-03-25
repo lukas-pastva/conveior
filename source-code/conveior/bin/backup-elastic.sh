@@ -70,8 +70,10 @@ do
     find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;
     do
       export SPLIT_FILE_ONLY=$(echo "${SPLIT_FILE}" | awk -F"/" '{print $(NF)}')
-      upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-elasticsearch/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}"
-      echo_message "Deleting ${SERVER_DIR}/${SPLIT_FILE_ONLY} || true"
+
+      # upload file
+      mkdir -p /tmp/s3/backup-elasticsearch/${ANTI_DATE}-${DATE}/
+      mv "${SERVER_DIR}/${SPLIT_FILE_ONLY}" /tmp/s3/backup-elasticsearch/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}
       rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}" || true
     done
 
