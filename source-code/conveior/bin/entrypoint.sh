@@ -26,6 +26,7 @@ mkdir -p /tmp/s3
 echo ${S3_KEY}:${S3_SECRET} > /etc/passwd-s3fs
 chmod 600 /etc/passwd-s3fs
 s3fs "${BUCKET_NAME}" /tmp/s3 -o allow_other -o url=${S3_URL}
+# s3fs "${BUCKET_NAME}" /tmp/s3 -o allow_other -o use_path_request_style -o url=${S3_URL}
 
 # if set gateway, then stating go app
 GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
