@@ -70,31 +70,40 @@ ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
   curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
 }
 
-function upload_file_s3_v4 () {
-  ZIP_FILE="${1}"
-  FILE_S3="${2}"
-  contentType="application/x-zip-compressed"
-  dateValue=$(date -u +'%Y%m%dT%H%M%SZ') # ISO8601 format
-  region="auto"
-  service="s3"
-  awsKey="${S3_KEY}"
-  awsSecret="${S3_SECRET}"
+upload_file_s3_v4 () {
+  local ZIP_FILE="${1}"
+  local FILE_S3="${2}"
+  local contentType="application/x-zip-compressed"
+  local dateValue
+  dateValue=$(date -u +'%Y%m%dT%H%M%SZ') || { echo "Error: Unable to get date." >&2; return 1; }
+  local region="auto"
+  local service="s3"
+  local awsKey="${S3_KEY}"
+  local awsSecret="${S3_SECRET}"
 
   # Create a string to sign
-  stringToSign="AWS4-HMAC-SHA256\n${dateValue}\n${dateValue:0:8}/${region}/${service}/aws4_request\n$(echo -n -e "PUT\n/${BUCKET_NAME}/${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL}\n\ncontent-type;host\n$(echo -n -e "${contentType}\n${dateValue}\nhost\n" | openssl sha256 -hex)\n$(echo -n -e "UNSIGNED-PAYLOAD" | openssl sha256 -hex))"
-
+  stringToSign=$(cat <<EOF
+AWS4-HMAC-SHA256
+${dateValue}
+${dateValue:0:8}/${region}/${service}/aws4_request
+$(echo -n -e "PUT\n/${BUCKET_NAME}/${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL}\n\ncontent-type;host\n$(echo -n -e "${contentType}\n${dateValue}\nhost\n" | openssl sha256 -hex)\n$(echo -n -e "UNSIGNED-PAYLOAD" | openssl sha256 -hex)")
+EOF
+)
 
   # Calculate the signature
-  signature=$(printf "${stringToSign}" | openssl sha256 -hex -mac HMAC -macopt "hexkey:${awsSecret}" | sed 's/^.* //')
+  local signature
+  signature=$(printf "${stringToSign}" | openssl sha256 -hex -mac HMAC -macopt "hexkey:${awsSecret}" | sed 's/^.* //') || { echo "Error: Unable to calculate signature." >&2; return 1; }
 
-  # Make the PUT request
-  curl -sX PUT -T "${ZIP_FILE}" \
+  echo "Uploading into ${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
+
+  curl -v -X PUT -T "${ZIP_FILE}" \
     -H "Content-Type: ${contentType}" \
-    -H "Host: ${S3_URL}" \
+    -H "Host: ${S3_URL#https://}" \
     -H "X-Amz-Date: ${dateValue}" \
     -H "Authorization: AWS4-HMAC-SHA256 Credential=${awsKey}/${dateValue:0:8}/${region}/${service}/aws4_request,SignedHeaders=content-type;host;x-amz-date,Signature=${signature}" \
-    "${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
+    "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" || { echo "Error: Unable to upload file." >&2; return 1; }
 }
+
 
 # init
 if [[ -z ${CONFIG_FILE_DIR} ]]; then
