@@ -76,7 +76,8 @@ ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
 upload_file_s3_fs () {
     local ZIP_FILE="${1}"
     local FILE_S3="${2}"
-    rsync --parents "${ZIP_FILE}" "/tmp/s3/${FILE_S3}/"
+    mkdir -p "/tmp/s3/${FILE_S3%/*}"
+    cp "${ZIP_FILE}" "/tmp/s3/${FILE_S3}"
 }
 
 upload_file_s3_v4 () {
@@ -151,4 +152,3 @@ export S3_URL=$(yq e '.config.s3_url' ${CONFIG_FILE_DIR}) || true
 export S3_KEY=$(yq e '.config.s3_key' ${CONFIG_FILE_DIR}) || true
 export S3_SECRET=$(yq e '.config.s3_secret' ${CONFIG_FILE_DIR}) || true
 export CONTAINER_ORCHESTRATOR=$(yq e '.config.container_orchestrator' ${CONFIG_FILE_DIR})
-}
