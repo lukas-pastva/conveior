@@ -19,6 +19,7 @@ RUN apt-get update -qq && \
     docker.io \
     jq \
     rsync \
+    rclone \
     vim \
     libzip-dev \
     procps \

@@ -33,7 +33,7 @@ fi
 
 if [ "${BUCKET_TYPE}" == "S3_RCLONE" ]; then
 
-  config="[${BUCKET_NAME}]
+  config="[s3]
 type = s3
 env_auth = false
 provider = AWS
@@ -46,7 +46,6 @@ secret_access_key = ${S3_SECRET}
   config_file="$HOME/.config/rclone/rclone.conf"
   mkdir -p "$(dirname "$config_file")"
   echo "$config" > "$config_file"
-  echo "rclone configured for Amazon S3 with remote name: ${BUCKET_NAME}"
 fi
 
 # if set gateway, then stating go app

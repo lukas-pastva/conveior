@@ -86,8 +86,7 @@ upload_file_s3_fs () {
 upload_file_s3_rclone () {
     local ZIP_FILE="${1}"
     local FILE_S3="${2}"
-    mkdir -p "/tmp/rclone/${FILE_S3%/*}"
-    cp "${ZIP_FILE}" "/tmp/rclone/${FILE_S3}"
+    rclone copy "${ZIP_FILE}" "s3:${BUCKET_NAME}/${FILE_S3}"
 }
 
 upload_file_s3_v4 () {
