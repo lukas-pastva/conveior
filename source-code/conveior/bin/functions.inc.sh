@@ -43,6 +43,9 @@ function upload_file () {
   if [ "${BUCKET_TYPE}" == "S3_FS" ]; then
       upload_file_s3_fs $1 $2
   fi
+  if [ "${BUCKET_TYPE}" == "S3_RCLONE" ]; then
+      upload_file_s3_rclone $1 $2
+  fi
   if [ "${BUCKET_TYPE}" == "GCP" ]; then
       upload_file_gcp $1 $2
   fi
@@ -80,18 +83,33 @@ upload_file_s3_fs () {
     cp "${ZIP_FILE}" "/tmp/s3/${FILE_S3}"
 }
 
+upload_file_s3_rclone () {
+    local ZIP_FILE="${1}"
+    local FILE_S3="${2}"
+    mkdir -p "/tmp/rclone/${FILE_S3%/*}"
+    cp "${ZIP_FILE}" "/tmp/rclone/${FILE_S3}"
+}
+
 upload_file_s3_v4 () {
   local ZIP_FILE="${1}"
   local FILE_S3="${2}"
   local contentType="application/x-zip-compressed"
   local dateValue
   dateValue=$(date -u +'%Y%m%dT%H%M%SZ') || { echo "Error: Unable to get date." >&2; return 1; }
-  local region="eeur"
+  local region="auto"
   local service="s3"
+
+  #  echo "Debug: ZIP_FILE: $ZIP_FILE"
+  #  echo "Debug: FILE_S3: $FILE_S3"
+  #  echo "Debug: contentType: $contentType"
+  #  echo "Debug: dateValue: $dateValue"
+  #  echo "Debug: region: $region"
+  #  echo "Debug: service: $service"
 
   # Calculate content SHA256
   local contentSha256
-  contentSha256=$(echo -n "UNSIGNED-PAYLOAD" | openssl sha256 -hex)
+  contentSha256=$(openssl dgst -sha256 -hex < "${ZIP_FILE}" | cut -d ' ' -f 2)
+  echo "Debug: contentSha256: $contentSha256"
 
   # Create a string to sign
   local stringToSign
@@ -99,37 +117,42 @@ upload_file_s3_v4 () {
 AWS4-HMAC-SHA256
 ${dateValue}
 ${dateValue:0:8}/${region}/${service}/aws4_request
-$(echo -n -e "PUT\n/${BUCKET_NAME}/${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL}\n\ncontent-type;host\n${contentSha256}")
+$(echo -n "PUT\n/${BUCKET_NAME}/${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL#https://}\n\ncontent-type;host\n${contentSha256}")
 EOF
 )
-
-  # Debug: Print the generated stringToSign
-  echo "Debug: Generated StringToSign:"
+  echo "Debug: stringToSign:"
   echo "$stringToSign"
+
+  # Calculate the signing key
+  local kDate=$(printf "%s" "${dateValue:0:8}" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${S3_SECRET}" | cut -d ' ' -f 2)
+  local kRegion=$(printf "%s" "${region}" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kDate}" | cut -d ' ' -f 2)
+  local kService=$(printf "%s" "${service}" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kRegion}" | cut -d ' ' -f 2)
+  local kSigning=$(printf "aws4_request" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kService}" | cut -d ' ' -f 2)
+
+  #  echo "Debug: kDate: $kDate"
+  #  echo "Debug: kRegion: $kRegion"
+  #  echo "Debug: kService: $kService"
+  #  echo "Debug: kSigning: $kSigning"
 
   # Calculate the signature
   local signature
-  echo "S3_KEY: $S3_KEY"
-  echo "S3_SECRET: $S3_SECRET"
-  signature=$(printf "${stringToSign}" | openssl sha256 -hex -mac HMAC -macopt "hexkey:${S3_SECRET}" | sed 's/^.* //') || { echo "Error: Unable to calculate signature." >&2; return 1; }
-
-  # Debug: Print the calculated signature
+  signature=$(printf "%s" "${stringToSign}" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kSigning}" | cut -d ' ' -f 2)
   echo "Debug: Calculated Signature: $signature"
 
   echo "Uploading into ${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
-
-  # Debug: Print the curl command
-  echo "Debug: Curl Command:"
-  echo "curl -v -X PUT -T \"${ZIP_FILE}\" \
-    -H \"Content-Type: ${contentType}\" \
-    -H \"Host: ${S3_URL#https://}\" \
-    -H \"X-Amz-Date: ${dateValue}\" \
-    -H \"X-Amz-Content-SHA256: ${contentSha256}\" \
-    -H \"Authorization: AWS4-HMAC-SHA256 Credential=${S3_KEY}/${dateValue:0:8}/${region}/${service}/aws4_request,SignedHeaders=content-type;host;x-amz-date;x-amz-content-sha256,Signature=${signature}\" \
-    \"${S3_URL}/${BUCKET_NAME}/${FILE_S3}\""
+  #
+  #  # Debug: Print the curl command
+  #  echo "Debug: Curl Command:"
+  #  echo "curl -i -X PUT -T \"${ZIP_FILE}\" \
+  #    -H \"Content-Type: ${contentType}\" \
+  #    -H \"Host: ${S3_URL#https://}\" \
+  #    -H \"X-Amz-Date: ${dateValue}\" \
+  #    -H \"X-Amz-Content-SHA256: ${contentSha256}\" \
+  #    -H \"Authorization: AWS4-HMAC-SHA256 Credential=${S3_KEY}/${dateValue:0:8}/${region}/${service}/aws4_request,SignedHeaders=content-type;host;x-amz-date;x-amz-content-sha256,Signature=${signature}\" \
+  #    \"${S3_URL}/${BUCKET_NAME}/${FILE_S3}\""
 
   # Make the PUT request
-  curl -v -X PUT -T "${ZIP_FILE}" \
+  curl -i -X PUT -T "${ZIP_FILE}" \
     -H "Content-Type: ${contentType}" \
     -H "Host: ${S3_URL#https://}" \
     -H "X-Amz-Date: ${dateValue}" \

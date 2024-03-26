@@ -31,6 +31,24 @@ if [ "${BUCKET_TYPE}" == "S3_FS" ]; then
   # s3fs "${BUCKET_NAME}" /tmp/s3 -o allow_other -o use_path_request_style -o url=${S3_URL}
 fi
 
+if [ "${BUCKET_TYPE}" == "S3_RCLONE" ]; then
+
+  config="[${BUCKET_NAME}]
+type = s3
+env_auth = false
+provider = AWS
+region = auto
+access_key_id = ${S3_KEY}
+secret_access_key = ${S3_SECRET}
+"
+
+  # Write configuration to file
+  config_file="$HOME/.config/rclone/rclone.conf"
+  mkdir -p "$(dirname "$config_file")"
+  echo "$config" > "$config_file"
+  echo "rclone configured for Amazon S3 with remote name: ${BUCKET_NAME}"
+fi
+
 # if set gateway, then stating go app
 GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
 if [ -z "$GW_URL" ]; then
