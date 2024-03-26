@@ -22,9 +22,7 @@ do
     cd "${SERVER_DIR}"
     zip -rqq "${ZIP_FILE_ONLY}" "."
 
-    # upload
-    mkdir -p /tmp/s3/backup-file/${POD_SHORT}/
-    cp "${SERVER_DIR}/${ZIP_FILE_ONLY}" /tmp/s3/backup-file/${POD_SHORT}/${ZIP_FILE_ONLY}
+    upload_file "${SERVER_DIR}/${ZIP_FILE_ONLY}" "backup-file/${POD_SHORT}/${ZIP_FILE_ONLY}"
     find "${SERVER_DIR}" -mindepth 1 -delete
   fi
 

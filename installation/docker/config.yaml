@@ -1,5 +1,6 @@
 config:
   container_orchestrator: docker # kubernetes
+  bucket_type: "S3"
   bucket_name: "tronic"
   prometheus_pushgateway: "http://pushgw:9091/metrics/job/conveior/entity/mltech" # if specified, each 5 minutes will push metrics to the URL
   enableHwMonitoring: false

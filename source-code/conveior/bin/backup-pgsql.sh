@@ -55,10 +55,8 @@ do
       fi
 
       rm "/${SERVER_DIR}/${FILE}"
+      upload_file "${ZIP_FILE}" "backup-pgsql/${POD}/${DATABASE_ITEM}/${ZIP_FILE_ONLY}"
 
-      # upload file
-      mkdir -p /tmp/s3/backup-pgsql/${POD}/${DATABASE_ITEM}/
-      cp "${ZIP_FILE}" /tmp/s3/backup-pgsql/${POD}/${DATABASE_ITEM}/${ZIP_FILE_ONLY}
       rm "${ZIP_FILE}"
     fi
   done

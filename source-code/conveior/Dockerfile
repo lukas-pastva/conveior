@@ -18,6 +18,7 @@ RUN apt-get update -qq && \
     containerd \
     docker.io \
     jq \
+    rsync \
     vim \
     libzip-dev \
     procps \
