@@ -40,6 +40,7 @@ provider = AWS
 region = auto
 access_key_id = ${S3_KEY}
 secret_access_key = ${S3_SECRET}
+endpoint = ${S3_URL}
 "
 
   # Write configuration to file
