@@ -63,7 +63,6 @@ function upload_file_gcp () {
 function upload_file_s3_v2 () {
   ZIP_FILE="${1}"
   FILE_S3="${2}"
-#  contentType="application/x-compressed-tar"
   contentType="application/x-zip-compressed"
   dateValue=$(date -R)
   resource="/${BUCKET_NAME}/${FILE_S3}"
@@ -73,8 +72,7 @@ ${contentType}
 ${dateValue}
 ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
 
-  curl -X PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
-  echo curl -X PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
+  curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
 }
 
 upload_file_s3_fs () {
@@ -130,29 +128,13 @@ EOF
   local kService=$(printf "%s" "${service}" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kRegion}" | cut -d ' ' -f 2)
   local kSigning=$(printf "aws4_request" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kService}" | cut -d ' ' -f 2)
 
-  #  echo "Debug: kDate: $kDate"
-  #  echo "Debug: kRegion: $kRegion"
-  #  echo "Debug: kService: $kService"
-  #  echo "Debug: kSigning: $kSigning"
-
   # Calculate the signature
   local signature
   signature=$(printf "%s" "${stringToSign}" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kSigning}" | cut -d ' ' -f 2)
   echo "Debug: Calculated Signature: $signature"
 
   echo "Uploading into ${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
-  #
-  #  # Debug: Print the curl command
-  #  echo "Debug: Curl Command:"
-  #  echo "curl -i -X PUT -T \"${ZIP_FILE}\" \
-  #    -H \"Content-Type: ${contentType}\" \
-  #    -H \"Host: ${S3_URL#https://}\" \
-  #    -H \"X-Amz-Date: ${dateValue}\" \
-  #    -H \"X-Amz-Content-SHA256: ${contentSha256}\" \
-  #    -H \"Authorization: AWS4-HMAC-SHA256 Credential=${S3_KEY}/${dateValue:0:8}/${region}/${service}/aws4_request,SignedHeaders=content-type;host;x-amz-date;x-amz-content-sha256,Signature=${signature}\" \
-  #    \"${S3_URL}/${BUCKET_NAME}/${FILE_S3}\""
 
-  # Make the PUT request
   curl -i -X PUT -T "${ZIP_FILE}" \
     -H "Content-Type: ${contentType}" \
     -H "Host: ${S3_URL#https://}" \
