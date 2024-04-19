@@ -4,9 +4,10 @@
 POD_NAME="weblate-postgresql-0"
 NAMESPACE="weblate"
 BACKUP_FILE="backup.sql"
-DATABASE_ENV_VAR="POSTGRES_DATABASE"
-PASSWORD_ENV_VAR="POSTGRES_PASSWORD"
-CONTAINER_NAME="postgresql"
+DATABASE_ENV_VAR="POSTGRES_DATABASE"  # This will fetch the database name
+PASSWORD_ENV_VAR="POSTGRES_PASSWORD"  # Not directly used, password fetched from secret instead
+CONTAINER_NAME="postgresql"  # Corrected container name
+USERNAME="postgres"  # Username for PostgreSQL
 USERNAME="postgres"  # TODO
 
 # Copy backup file to the pod

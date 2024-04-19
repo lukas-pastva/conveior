@@ -32,7 +32,7 @@ function download_file_gcp {
 }
 
 function upload_file () {
-  echo_message "Uploading ${BUCKET_NAME}/${2}"
+  echo_message "Uploading (${BUCKET_TYPE}) ${BUCKET_NAME}/${2}"
 
   if [ "${BUCKET_TYPE}" == "S3" ]; then
       upload_file_s3_v2 $1 $2
@@ -73,7 +73,8 @@ ${contentType}
 ${dateValue}
 ${resource}" | openssl sha1 -hmac ${S3_SECRET} -binary | base64)
 
-  curl -sX PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
+  curl -X PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
+  echo curl -X PUT -T "${ZIP_FILE}" -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}${resource}"
 }
 
 upload_file_s3_fs () {
@@ -86,7 +87,8 @@ upload_file_s3_fs () {
 upload_file_s3_rclone () {
     local ZIP_FILE="${1}"
     local FILE_S3="${2}"
-    rclone copy "${ZIP_FILE}" "s3:${BUCKET_NAME}/${FILE_S3%/*}"
+
+    rclone --config $HOME/.config/rclone/rclone.conf copy "${ZIP_FILE}" "s3:${BUCKET_NAME}/${FILE_S3%/*}"
 }
 
 upload_file_s3_v4 () {
