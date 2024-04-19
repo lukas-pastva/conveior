@@ -22,7 +22,9 @@ S3_SECRET=$(yq e '.config.s3_secret' ${CONFIG_FILE_DIR})
 BUCKET_NAME=$(yq e '.config.bucket_name' ${CONFIG_FILE_DIR})
 BUCKET_TYPE=$(yq e '.config.bucket_type' ${CONFIG_FILE_DIR})
 S3_URL=$(yq e '.config.s3_url' ${CONFIG_FILE_DIR})
-
+if [[ $S3_URL != https://* ]]; then
+    S3_URL="https://${S3_URL}"
+fi
 if [ "${BUCKET_TYPE}" == "S3_FS" ]; then
   mkdir -p /tmp/s3
   echo ${S3_KEY}:${S3_SECRET} > /etc/passwd-s3fs
