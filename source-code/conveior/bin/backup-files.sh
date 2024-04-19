@@ -13,7 +13,8 @@ for POD in $PODS; do
 
   for POD_PATH in $POD_PATHS; do
     SERVER_DIR="/tmp/${POD}"
-    FILE="${ANTI_DATE}-${POD}-${DATE}"
+    PATH_NAME=$(echo ${POD_PATH} | sed 's|/|_|g')
+    FILE="${ANTI_DATE}-${POD}-${PATH_NAME}-${DATE}"
     ZIP_FILE_ONLY="${FILE}.zip"
     ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
 
