@@ -22,7 +22,6 @@ for POD in $PODS; do
     find "${SERVER_DIR}" -mindepth 1 -delete
 
     if [[ $(docker exec -i "${POD}" bash -c "cd ${POD_PATH} && ls | wc -l") != "0" ]]; then
-      echo "docker cp ${POD}:${POD_PATH} ${SERVER_DIR}"
       docker cp "${POD}:${POD_PATH}" "${SERVER_DIR}"
       LAST_DIR=$(echo ${POD_PATH} | awk -F"/" '{print $NF}')
       cd "${SERVER_DIR}/${LAST_DIR}" && zip -rqq "${ZIP_FILE}" "."
