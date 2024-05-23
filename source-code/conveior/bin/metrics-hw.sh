@@ -86,36 +86,36 @@ do
   fi
 
   # Docker size
-  if (( ${CONTAINER_SIZE} > 0 )) ; then
+  if [ -n "${CONTAINER_SIZE}" ] && (( ${CONTAINER_SIZE} > 0 )) ; then
     METRIC="conveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
     METRICS=$(echo -e "$METRICS\n$METRIC")
   fi
 
   # Docker volume size
-  VOLUME_MOUNTS=$(docker inspect -f '{{ range .Mounts }}{{ .Source }} {{ end }}' ${CONTAINER_NAME})
+  VOLUME_MOUNTS=$(docker inspect -f '{{ json .Mounts }}' ${CONTAINER_NAME} | jq -r '.[] | select(.Type=="volume") | .Destination')
   for VOLUME in ${VOLUME_MOUNTS}; do
-    VOLUME_SIZE=$(du -sb ${VOLUME} | awk '{print $1}')
-    if (( ${VOLUME_SIZE} > 0 )); then
+    VOLUME_SIZE=$(docker exec -i ${CONTAINER_NAME} du -sb ${VOLUME} | awk '{print $1}')
+    if [ -n "${VOLUME_SIZE}" ] && (( ${VOLUME_SIZE} > 0 )); then
       METRIC="conveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
       METRICS=$(echo -e "$METRICS\n$METRIC")
     fi
   done
 
   # hwProcess
-  export PROCESS=$(docker exec -i ${CONTAINER_NAME} ps aux | ps -eo nlwp | tail -n +2 | awk '{ num_threads += $1 } END { print num_threads }')
-  if (( ${PROCESS} > 0 )) ; then
+  export PROCESS=$(docker exec -i ${CONTAINER_NAME} ps -eo nlwp | tail -n +2 | awk '{ num_threads += $1 } END { print num_threads }')
+  if [[ -n "${PROCESS}" && "${PROCESS}" =~ ^[0-9]+$ && ${PROCESS} -gt 0 ]] ; then
     METRIC="conveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${PROCESS}"
     METRICS=$(echo -e "$METRICS\n$METRIC")
   fi
 
   # ramProcessesUsage > 10 %
-  export PROCESS_LIST=$(docker exec -i ${CONTAINER_NAME} ps -o pid,user,%mem,command ax | awk '$3 > 10')
+  export PROCESS_LIST=$(docker exec -i ${CONTAINER_NAME} top -bn1 | awk '$10 > 10 {print $1, $2, $6, $12}')
   if [[ "${PROCESS_LIST}" != *"failed"* ]]; then
     if [[ "${PROCESS_LIST}" != *"supported"* ]]; then
       export IFS=$'\n'
       for PROCESS in ${PROCESS_LIST}; do
         export USER=$(echo "${PROCESS}" | awk '{print $2}')
-        export VALUE=$(echo "${PROCESS}" | awk '{print $3}' | jq '.|ceil')
+        export VALUE=$(echo "${PROCESS}" | awk '{print $3}')
         export QUERY=$(echo "${PROCESS}" | awk '{print $4}'| cut -c1-50)
         export PID=$(echo "${PROCESS}" | awk '{print $1}')
 
@@ -127,22 +127,22 @@ do
   fi
 
   # cpuProcessesUsage > 10 %
-    export PROCESS_LIST=$(docker exec -i ${CONTAINER_NAME} ps -o pid,user,%cpu,command ax | awk '$3 > 10')
-    if [[ "${PROCESS_LIST}" != *"failed"* ]]; then
-      if ([[ "${PROCESS_LIST}" != *"supported"* ]] ); then
-        export IFS=$'\n'
-        for PROCESS in ${PROCESS_LIST}; do
-          export USER=$(echo "${PROCESS}" | awk '{print $2}')
-          export VALUE=$(echo "${PROCESS}" | awk '{print $3}' | jq '.|ceil')
-          export QUERY=$(echo "${PROCESS}" | awk '{print $4}'| cut -c1-50)
-          export PID=$(echo "${PROCESS}" | awk '{print $1}')
+  export PROCESS_LIST=$(docker exec -i ${CONTAINER_NAME} top -bn1 | awk '$9 > 10 {print $1, $2, $9, $12}')
+  if [[ "${PROCESS_LIST}" != *"failed"* ]]; then
+    if [[ "${PROCESS_LIST}" != *"supported"* ]]; then
+      export IFS=$'\n'
+      for PROCESS in ${PROCESS_LIST}; do
+        export USER=$(echo "${PROCESS}" | awk '{print $2}')
+        export VALUE=$(echo "${PROCESS}" | awk '{print $3}')
+        export QUERY=$(echo "${PROCESS}" | awk '{print $4}'| cut -c1-50)
+        export PID=$(echo "${PROCESS}" | awk '{print $1}')
 
-          METRIC="conveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
-          METRICS=$(echo -e "$METRICS\n$METRIC")
+        METRIC="conveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
+        METRICS=$(echo -e "$METRICS\n$METRIC")
 
-        done
-      fi
+      done
     fi
+  fi
 
 done
 unset IFS
@@ -157,3 +157,11 @@ do
   METRIC="conveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   METRICS=$(echo -e "$METRICS\n$METRIC")
 
+done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
+
+GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
+if [ -z "$GW_URL" ]; then
+  echo -e "$METRICS"
+else
+  echo -e "$METRICS" | curl --data-binary @- "${GW_URL}"
+fi
