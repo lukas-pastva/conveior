@@ -91,6 +91,16 @@ do
     METRICS=$(echo -e "$METRICS\n$METRIC")
   fi
 
+  # Docker volume size
+  VOLUME_MOUNTS=$(docker inspect -f '{{ range .Mounts }}{{ .Source }} {{ end }}' ${CONTAINER_NAME})
+  for VOLUME in ${VOLUME_MOUNTS}; do
+    VOLUME_SIZE=$(du -sb ${VOLUME} | awk '{print $1}')
+    if (( ${VOLUME_SIZE} > 0 )); then
+      METRIC="conveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
+      METRICS=$(echo -e "$METRICS\n$METRIC")
+    fi
+  done
+
   # hwProcess
   export PROCESS=$(docker exec -i ${CONTAINER_NAME} ps aux | ps -eo nlwp | tail -n +2 | awk '{ num_threads += $1 } END { print num_threads }')
   if (( ${PROCESS} > 0 )) ; then
@@ -119,7 +129,7 @@ do
   # cpuProcessesUsage > 10 %
     export PROCESS_LIST=$(docker exec -i ${CONTAINER_NAME} ps -o pid,user,%cpu,command ax | awk '$3 > 10')
     if [[ "${PROCESS_LIST}" != *"failed"* ]]; then
-      if [[ "${PROCESS_LIST}" != *"supported"* ]]; then
+      if ([[ "${PROCESS_LIST}" != *"supported"* ]] ); then
         export IFS=$'\n'
         for PROCESS in ${PROCESS_LIST}; do
           export USER=$(echo "${PROCESS}" | awk '{print $2}')
@@ -147,11 +157,3 @@ do
   METRIC="conveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   METRICS=$(echo -e "$METRICS\n$METRIC")
 
-done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
-
-GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
-if [ -z "$GW_URL" ]; then
-  echo -e "$METRICS"
-else
-  echo -e "$METRICS" | curl --data-binary @- "${GW_URL}"
-fi
