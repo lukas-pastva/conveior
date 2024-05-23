@@ -102,9 +102,17 @@ do
   done
 
   # hwProcess
-  export PROCESS=$(docker exec -i ${CONTAINER_NAME} ps -eo nlwp | tail -n +2 | awk '{ num_threads += $1 } END { print num_threads }')
-  if [[ -n "${PROCESS}" && "${PROCESS}" =~ ^[0-9]+$ && ${PROCESS} -gt 0 ]] ; then
-    METRIC="conveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${PROCESS}"
+  THREAD_COUNT=0
+  PIDS=$(docker exec -i ${CONTAINER_NAME} ps -e -o pid | tail -n +2)
+  for PID in $PIDS; do
+    THREADS=$(docker exec -i ${CONTAINER_NAME} cat /proc/$PID/status 2>/dev/null | grep Threads | awk '{print $2}')
+    if [[ -n "$THREADS" && "$THREADS" =~ ^[0-9]+$ ]]; then
+      THREAD_COUNT=$((THREAD_COUNT + THREADS))
+    fi
+  done
+
+  if (( THREAD_COUNT > 0 )) ; then
+    METRIC="conveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
     METRICS=$(echo -e "$METRICS\n$METRIC")
   fi
 
