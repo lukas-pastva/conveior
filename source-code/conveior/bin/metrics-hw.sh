@@ -7,7 +7,8 @@ METRIC="conveior_hwHeartbeat ${EPOCH}"
 METRICS=$(echo -e "$METRICS\n$METRIC")
 
 # boot time
-export bootTime=$((($(date '+%s') - $(cut -d. -f1 /proc/uptime))*1000))
+boot_time_secs=$(cut -d. -f1 /proc/uptime)
+export bootTime=$((($(date '+%s') - boot_time_secs)*1000))
 METRIC="conveior_hwBoot{label_name=\"boot\"} ${bootTime}"
 METRICS=$(echo -e "$METRICS\n$METRIC")
 
@@ -122,12 +123,12 @@ for CONTAINER in $CONTAINER_LIST; do
       for PROCESS in ${PROCESS_LIST}; do
         export USER=$(echo "${PROCESS}" | awk '{print $2}')
         export VALUE=$(echo "${PROCESS}" | awk '{print $3}')
-        export QUERY=$(echo "${PROCESS}" | awk '{print $4}'| cut -c1-50)
+        export QUERY=$(echo "${PROCESS}" | awk '{print $4}' | cut -c1-50)
         export PID=$(echo "${PROCESS}" | awk '{print $1}')
-
-        METRIC="conveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
-        METRICS=$(echo -e "$METRICS\n$METRIC")
-
+        if [[ "$VALUE" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+          METRIC="conveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
+          METRICS=$(echo -e "$METRICS\n$METRIC")
+        fi
       done
     fi
   fi
@@ -140,12 +141,12 @@ for CONTAINER in $CONTAINER_LIST; do
       for PROCESS in ${PROCESS_LIST}; do
         export USER=$(echo "${PROCESS}" | awk '{print $2}')
         export VALUE=$(echo "${PROCESS}" | awk '{print $3}')
-        export QUERY=$(echo "${PROCESS}" | awk '{print $4}'| cut -c1-50)
+        export QUERY=$(echo "${PROCESS}" | awk '{print $4}' | cut -c1-50)
         export PID=$(echo "${PROCESS}" | awk '{print $1}')
-
-        METRIC="conveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
-        METRICS=$(echo -e "$METRICS\n$METRIC")
-
+        if [[ "$VALUE" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+          METRIC="conveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
+          METRICS=$(echo -e "$METRICS\n$METRIC")
+        fi
       done
     fi
   fi
@@ -158,7 +159,7 @@ while read CONTAINER; do
   export CONTAINER_NAME=$(echo ${CONTAINER} | awk -F";" '{print $1}')
   export CONTAINER_DATE_STR=$(echo ${CONTAINER} | awk -F";" '{print $2}')
   export CONTAINER_DATE=$(date -d ${CONTAINER_DATE_STR} +"%s")
-
+  
   METRIC="conveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   METRICS=$(echo -e "$METRICS\n$METRIC")
 
