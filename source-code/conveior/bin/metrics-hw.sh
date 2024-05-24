@@ -77,14 +77,14 @@ process_container() {
     MEM_VALUE=$(echo "${MEM_USAGE}" | awk '{print $1}' | tr -d 'MiB')
     
     if [[ "${CPU_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${CPU_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      METRICS="${METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${CPU_VALUE}"
+      echo "conveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${CPU_VALUE}"
     fi
     
     if [[ "${MEM_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${MEM_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      METRICS="${METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${MEM_VALUE}"
+      echo "conveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${MEM_VALUE}"
     fi
   done
-  
+
 }
 
 # Process each container sequentially
@@ -101,6 +101,9 @@ docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect -
     METRICS="${METRICS}\nconveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   fi
 done
+
+
+echo -e $METRICS
 
 # Push metrics to Prometheus Pushgateway
 GW_URL=$(yq e ".config.prometheus_pushgateway" "${CONFIG_FILE_DIR}")
