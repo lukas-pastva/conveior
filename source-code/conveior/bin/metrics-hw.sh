@@ -2,6 +2,9 @@
 
 source functions.inc.sh
 
+# Enable debug mode
+# set -x
+
 # Initialize EPOCH time and metrics
 EPOCH=$(date +%s)
 METRICS="conveior_hwHeartbeat ${EPOCH}"
@@ -34,12 +37,17 @@ done < <(df -h | grep -E '^/dev/')
 
 # Gather Docker metrics
 CONTAINER_LIST=$(docker ps -f status=running --format="{{.Names}};{{.Size}}")
+IFS=$'\n'
 for CONTAINER in ${CONTAINER_LIST}; do
   CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   CONTAINER_SIZE_RAW=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk '{print $1}')
   CONTAINER_SIZE=$(numfmt --from=iec <<< "${CONTAINER_SIZE_RAW}" 2>/dev/null)
 
-  if [[ -n "${CONTAINER_SIZE}" ]] && [[ "${CONTAINER_SIZE}" =~ ^[0-9]+$ ]]; then
+  echo "Processing container: ${CONTAINER_NAME}"
+  echo "Raw size: ${CONTAINER_SIZE_RAW}"
+  echo "Parsed size: ${CONTAINER_SIZE}"
+
+  if [[ -n "${CONTAINER_NAME}" ]] && [[ -n "${CONTAINER_SIZE_RAW}" ]] && [[ "${CONTAINER_SIZE}" =~ ^[0-9]+$ ]]; then
     # Docker size
     METRICS="${METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
   fi
@@ -62,6 +70,8 @@ for CONTAINER in ${CONTAINER_LIST}; do
   VOLUME_MOUNTS=$(docker inspect -f '{{ json .Mounts }}' "${CONTAINER_NAME}" | jq -r '.[] | select(.Type=="volume") | .Destination')
   for VOLUME in ${VOLUME_MOUNTS}; do
     VOLUME_SIZE=$(docker exec -i "${CONTAINER_NAME}" du -sb "${VOLUME}" | awk '{print $1}' 2>/dev/null)
+    echo "Processing volume: ${VOLUME}"
+    echo "Volume size: ${VOLUME_SIZE}"
     if [[ -n "${VOLUME_SIZE}" ]] && [[ "${VOLUME_SIZE}" =~ ^[0-9]+$ ]]; then
       METRICS="${METRICS}\nconveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
     fi
@@ -108,6 +118,8 @@ while read -r CONTAINER; do
   CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   CONTAINER_DATE_STR=$(echo "${CONTAINER}" | awk -F";" '{print $2}')
   CONTAINER_DATE=$(date -d "${CONTAINER_DATE_STR}" +"%s" 2>/dev/null)
+  echo "Processing container start time: ${CONTAINER_NAME}"
+  echo "Start time: ${CONTAINER_DATE}"
   if [[ -n "${CONTAINER_DATE}" ]] && [[ "${CONTAINER_DATE}" =~ ^[0-9]+$ ]]; then
     METRICS="${METRICS}\nconveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   fi
@@ -120,3 +132,6 @@ if [ -z "${GW_URL}" ]; then
 else
   echo -e "${METRICS}" | curl --data-binary @- "${GW_URL}"
 fi
+
+# Disable debug mode
+set +x
