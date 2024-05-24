@@ -61,7 +61,7 @@ process_container() {
     fi
   done
 
-  echo "${CONTAINER_METRICS}"
+  echo "${CONTAINER_METRICS}\n"
 }
 
 process_containers_memory_and_cpu() {
