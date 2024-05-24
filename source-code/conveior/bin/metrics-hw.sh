@@ -20,9 +20,9 @@ cpu=$(vmstat 1 2 | tail -1 | awk '{print 100 - $15}')
 METRICS="${METRICS}\nconveior_hwCpu{label_name=\"used\"} ${cpu}"
 
 # Gather Disk usage
-df -h | grep -E '^/dev/' | awk '{print $1, $5}' | tr -d '%' | while read -r DISK_NAME DISK_VALUE; do
+while read -r DISK_NAME DISK_VALUE; do
   METRICS="${METRICS}\nconveior_hwDisk{label_name=\"${DISK_NAME}\"} ${DISK_VALUE}"
-done
+done < <(df -h | grep -E '^/dev/' | awk '{print $1, $5}' | tr -d '%')
 
 # Gather Docker metrics
 CONTAINER_LIST=$(docker ps -f status=running --format="{{.Names}};{{.Size}}")
@@ -31,6 +31,7 @@ IFS=$'\n'
 # Function to process each container
 process_container() {
   local CONTAINER=$1
+  local METRICS=""
   local CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   local CONTAINER_SIZE_RAW=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk '{print $1}')
   local CONTAINER_SIZE=$(numfmt --from=iec <<< "${CONTAINER_SIZE_RAW}" 2>/dev/null)
@@ -72,36 +73,37 @@ process_container() {
   METRICS="${METRICS}\nconveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
 
   # Fetching overall CPU and RAM usage of the container
-  docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" "${CONTAINER_NAME}" | tail -n +2 | while read -r NAME CPU_USAGE MEM_USAGE; do
+  while read -r NAME CPU_USAGE MEM_USAGE; do
     CPU_VALUE=$(echo "${CPU_USAGE}" | tr -d '%')
     MEM_VALUE=$(echo "${MEM_USAGE}" | awk '{print $1}' | tr -d 'MiB')
     
     if [[ "${CPU_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${CPU_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      echo "conveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${CPU_VALUE}"
+      METRICS="${METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${CPU_VALUE}"
     fi
     
     if [[ "${MEM_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${MEM_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      echo "conveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${MEM_VALUE}"
+      METRICS="${METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${MEM_VALUE}"
     fi
-  done
+  done < <(docker stats --no-stream --format "{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" "${CONTAINER_NAME}" | tail -n +2)
 
+  echo "${METRICS}"
 }
 
 # Process each container sequentially
 for CONTAINER in ${CONTAINER_LIST}; do
-  process_container "${CONTAINER}"
+  CONTAINER_METRICS=$(process_container "${CONTAINER}")
+  METRICS="${METRICS}${CONTAINER_METRICS}"
 done
 
 # Gather Docker container start times
-docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}' | while read -r CONTAINER; do
+while read -r CONTAINER; do
   CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   CONTAINER_DATE_STR=$(echo "${CONTAINER}" | awk -F";" '{print $2}')
   CONTAINER_DATE=$(date -d "${CONTAINER_DATE_STR}" +"%s" 2>/dev/null)
   if [[ -n "${CONTAINER_DATE}" ]]; then
     METRICS="${METRICS}\nconveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   fi
-done
-
+done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
 
 echo -e $METRICS
 
