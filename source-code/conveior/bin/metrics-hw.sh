@@ -61,17 +61,6 @@ process_container() {
     fi
   done
 
-  # Process metrics
-  local THREAD_COUNT=0
-  local PIDS=$(docker exec -i "${CONTAINER_NAME}" ps -e -o pid | tail -n +2)
-  for PID in ${PIDS}; do
-    local THREADS=$(docker exec -i "${CONTAINER_NAME}" cat /proc/"${PID}"/status 2>/dev/null | awk '/Threads:/ {print $2}')
-    if [[ -n "${THREADS}" ]]; then
-      THREAD_COUNT=$((THREAD_COUNT + THREADS))
-    fi
-  done
-  CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
-
   echo "${CONTAINER_METRICS}"
 }
 
@@ -79,7 +68,7 @@ process_containers_memory_and_cpu() {
   # Fetching overall CPU and RAM usage of the container
   docker stats --no-stream --format "{{.Name}} {{.CPUPerc}} {{.MemUsage}}" | while IFS=" " read -r NAME CPU_USAGE MEM_USAGE; do
     CPU_VALUE=$(echo "${CPU_USAGE}" | tr -d '%')
-    MEM_VALUE=$(echo "${MEM_USAGE}" | awk '{print $1}' | tr -d 'MiB')
+    MEM_VALUE=$(echo "${MEM_USAGE}" | awk '{print $1 * 1024 * 1024}' | tr -d 'MiB')
 
     if [[ "${CPU_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
       echo "conveior_hwCpuProcess{label_name=\"${NAME}\"} ${CPU_VALUE}"
@@ -89,6 +78,7 @@ process_containers_memory_and_cpu() {
     fi
   done
 }
+
 
 # Process each container sequentially
 for CONTAINER in ${CONTAINER_LIST}; do
