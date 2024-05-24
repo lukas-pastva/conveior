@@ -71,21 +71,20 @@ process_container() {
   done
   METRICS="${METRICS}\nconveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
 
-  # RAM and CPU usage by processes > 10%
-  local PROCESS_LIST=$(docker exec -i "${CONTAINER_NAME}" top -bn1 | awk '$9 > 10 || $10 > 10 {print $1, $2, $6, $9, $10, $12}')
-  for PROCESS in ${PROCESS_LIST}; do
-    local USER=$(echo "${PROCESS}" | awk '{print $2}')
-    local RAM_VALUE=$(echo "${PROCESS}" | awk '{print $3}')
-    local CPU_VALUE=$(echo "${PROCESS}" | awk '{print $4}')
-    local QUERY=$(echo "${PROCESS}" | awk '{print $6}' | cut -c1-50)
-    local PID=$(echo "${PROCESS}" | awk '{print $1}')
-    if [[ "${RAM_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${RAM_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      METRICS="${METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${RAM_VALUE}"
-    fi
+  # Fetching overall CPU and RAM usage of the container
+  docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" "${CONTAINER_NAME}" | tail -n +2 | while read -r NAME CPU_USAGE MEM_USAGE; do
+    CPU_VALUE=$(echo "${CPU_USAGE}" | tr -d '%')
+    MEM_VALUE=$(echo "${MEM_USAGE}" | awk '{print $1}' | tr -d 'MiB')
+    
     if [[ "${CPU_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${CPU_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      METRICS="${METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${CPU_VALUE}"
+      METRICS="${METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${CPU_VALUE}"
+    fi
+    
+    if [[ "${MEM_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${MEM_VALUE} > 10" | bc -l) -eq 1 ]]; then
+      METRICS="${METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${MEM_VALUE}"
     fi
   done
+  
 }
 
 # Process each container sequentially
