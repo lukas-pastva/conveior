@@ -72,21 +72,22 @@ process_container() {
   done
   CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
 
+  echo "${CONTAINER_METRICS}"
+}
+
+process_containers_memory_and_cpu() {
   # Fetching overall CPU and RAM usage of the container
   docker stats --no-stream --format "{{.Name}} {{.CPUPerc}} {{.MemUsage}}" | while IFS=" " read -r NAME CPU_USAGE MEM_USAGE; do
     CPU_VALUE=$(echo "${CPU_USAGE}" | tr -d '%')
     MEM_VALUE=$(echo "${MEM_USAGE}" | awk '{print $1}' | tr -d 'MiB')
 
-    if [[ "${CPU_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${CPU_VALUE} > 1" | bc -l) -eq 1 ]]; then
-      CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}\"} ${CPU_VALUE}"
+    if [[ "${CPU_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+      echo "conveior_hwCpuProcess{label_name=\"${NAME}\"} ${CPU_VALUE}"
     fi
-
-    if [[ "${MEM_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${MEM_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}\"} ${MEM_VALUE}"
+    if [[ "${MEM_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+      echo "conveior_hwRamProcess{label_name=\"${NAME}\"} ${MEM_VALUE}"
     fi
-    echo -e "${CONTAINER_METRICS}"
   done
-  
 }
 
 # Process each container sequentially
@@ -94,6 +95,10 @@ for CONTAINER in ${CONTAINER_LIST}; do
   CONTAINER_METRICS=$(process_container "${CONTAINER}")
   METRICS="${METRICS}${CONTAINER_METRICS}"
 done
+
+# Process overall CPU and RAM usage of the containers
+CONTAINERS_MEMORY_AND_CPU_METRICS=$(process_containers_memory_and_cpu)
+METRICS="${METRICS}${CONTAINERS_MEMORY_AND_CPU_METRICS}"
 
 # Gather Docker container start times
 while read -r CONTAINER; do
