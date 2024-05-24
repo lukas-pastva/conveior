@@ -31,13 +31,13 @@ IFS=$'\n'
 # Function to process each container
 process_container() {
   local CONTAINER=$1
-  local METRICS=""
+  local CONTAINER_METRICS=""
   local CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   local CONTAINER_SIZE_RAW=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk '{print $1}')
   local CONTAINER_SIZE=$(numfmt --from=iec <<< "${CONTAINER_SIZE_RAW}" 2>/dev/null)
 
   if [[ -n "${CONTAINER_SIZE}" ]]; then
-    METRICS="${METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
+    CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
   fi
 
   # Network usage
@@ -48,8 +48,8 @@ process_container() {
   if [[ -n "${networkRx1}" && -n "${networkTx1}" && -n "${networkRx2}" && -n "${networkTx2}" ]]; then
     local RX=$((networkRx2 - networkRx1))
     local TX=$((networkTx2 - networkTx1))
-    METRICS="${METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"rx\"} ${RX}"
-    METRICS="${METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"tx\"} ${TX}"
+    CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"rx\"} ${RX}"
+    CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"tx\"} ${TX}"
   fi
 
   # Docker volume size
@@ -57,7 +57,7 @@ process_container() {
   for VOLUME in ${VOLUME_MOUNTS}; do
     local VOLUME_SIZE=$(docker exec -i "${CONTAINER_NAME}" du -sb "${VOLUME}" | awk '{print $1}' 2>/dev/null)
     if [[ -n "${VOLUME_SIZE}" ]]; then
-      METRICS="${METRICS}\nconveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
+      CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
     fi
   done
 
@@ -70,7 +70,7 @@ process_container() {
       THREAD_COUNT=$((THREAD_COUNT + THREADS))
     fi
   done
-  METRICS="${METRICS}\nconveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
+  CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
 
   # Fetching overall CPU and RAM usage of the container
   while read -r NAME CPU_USAGE MEM_USAGE; do
@@ -78,15 +78,15 @@ process_container() {
     MEM_VALUE=$(echo "${MEM_USAGE}" | awk '{print $1}' | tr -d 'MiB')
     
     if [[ "${CPU_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${CPU_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      METRICS="${METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${CPU_VALUE}"
+      CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${CPU_VALUE}"
     fi
     
     if [[ "${MEM_VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ && $(echo "${MEM_VALUE} > 10" | bc -l) -eq 1 ]]; then
-      METRICS="${METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${MEM_VALUE}"
+      CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/overall\"} ${MEM_VALUE}"
     fi
-  done < <(docker stats --no-stream --format "{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" "${CONTAINER_NAME}" | tail -n +2)
+  done < <(docker stats --no-stream --format "{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" "${CONTAINER_NAME}")
 
-  echo "${METRICS}"
+  echo "${CONTAINER_METRICS}"
 }
 
 # Process each container sequentially
@@ -105,7 +105,8 @@ while read -r CONTAINER; do
   fi
 done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
 
-echo -e $METRICS
+# Echo all metrics at once
+echo -e "${METRICS}"
 
 # Push metrics to Prometheus Pushgateway
 GW_URL=$(yq e ".config.prometheus_pushgateway" "${CONFIG_FILE_DIR}")
