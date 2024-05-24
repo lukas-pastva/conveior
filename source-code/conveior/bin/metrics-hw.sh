@@ -2,9 +2,6 @@
 
 source functions.inc.sh
 
-# Enable debug mode
-# set -x
-
 # Initialize EPOCH time and metrics
 EPOCH=$(date +%s)
 METRICS="conveior_hwHeartbeat ${EPOCH}"
@@ -43,12 +40,7 @@ for CONTAINER in ${CONTAINER_LIST}; do
   CONTAINER_SIZE_RAW=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk '{print $1}')
   CONTAINER_SIZE=$(numfmt --from=iec <<< "${CONTAINER_SIZE_RAW}" 2>/dev/null)
 
-  echo "Processing container: ${CONTAINER_NAME}"
-  echo "Raw size: ${CONTAINER_SIZE_RAW}"
-  echo "Parsed size: ${CONTAINER_SIZE}"
-
-  if [[ -n "${CONTAINER_NAME}" ]] && [[ -n "${CONTAINER_SIZE_RAW}" ]] && [[ "${CONTAINER_SIZE}" =~ ^[0-9]+$ ]]; then
-    # Docker size
+  if [[ -n "${CONTAINER_SIZE}" ]]; then
     METRICS="${METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
   fi
 
@@ -59,7 +51,7 @@ for CONTAINER in ${CONTAINER_LIST}; do
   networkRx2=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/rx_bytes 2>/dev/null)
   networkTx2=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/tx_bytes 2>/dev/null)
   
-  if [[ -n "${networkRx1}" ]] && [[ -n "${networkTx1}" ]] && [[ -n "${networkRx2}" ]] && [[ -n "${networkTx2}" ]]; then
+  if [[ -n "${networkRx1}" && -n "${networkTx1}" && -n "${networkRx2}" && -n "${networkTx2}" ]]; then
     RX=$((networkRx2 - networkRx1))
     TX=$((networkTx2 - networkTx1))
     METRICS="${METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"rx\"} ${RX}"
@@ -70,9 +62,7 @@ for CONTAINER in ${CONTAINER_LIST}; do
   VOLUME_MOUNTS=$(docker inspect -f '{{ json .Mounts }}' "${CONTAINER_NAME}" | jq -r '.[] | select(.Type=="volume") | .Destination')
   for VOLUME in ${VOLUME_MOUNTS}; do
     VOLUME_SIZE=$(docker exec -i "${CONTAINER_NAME}" du -sb "${VOLUME}" | awk '{print $1}' 2>/dev/null)
-    echo "Processing volume: ${VOLUME}"
-    echo "Volume size: ${VOLUME_SIZE}"
-    if [[ -n "${VOLUME_SIZE}" ]] && [[ "${VOLUME_SIZE}" =~ ^[0-9]+$ ]]; then
+    if [[ -n "${VOLUME_SIZE}" ]]; then
       METRICS="${METRICS}\nconveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
     fi
   done
@@ -118,9 +108,7 @@ while read -r CONTAINER; do
   CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   CONTAINER_DATE_STR=$(echo "${CONTAINER}" | awk -F";" '{print $2}')
   CONTAINER_DATE=$(date -d "${CONTAINER_DATE_STR}" +"%s" 2>/dev/null)
-  echo "Processing container start time: ${CONTAINER_NAME}"
-  echo "Start time: ${CONTAINER_DATE}"
-  if [[ -n "${CONTAINER_DATE}" ]] && [[ "${CONTAINER_DATE}" =~ ^[0-9]+$ ]]; then
+  if [[ -n "${CONTAINER_DATE}" ]]; then
     METRICS="${METRICS}\nconveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   fi
 done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
@@ -132,6 +120,3 @@ if [ -z "${GW_URL}" ]; then
 else
   echo -e "${METRICS}" | curl --data-binary @- "${GW_URL}"
 fi
-
-# Disable debug mode
-set +x
