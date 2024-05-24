@@ -38,7 +38,7 @@ for CONTAINER in ${CONTAINER_LIST}; do
   CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   CONTAINER_SIZE=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk -F" " '{print $1}' | numfmt --from=iec 2>/dev/null)
 
-  if [ -n "${CONTAINER_SIZE}" ]; then
+  if [ -n "${CONTAINER_SIZE}" ] && [[ "${CONTAINER_SIZE}" =~ ^[0-9]+$ ]]; then
     # Docker size
     METRICS="${METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
   fi
@@ -84,7 +84,9 @@ for CONTAINER in ${CONTAINER_LIST}; do
     VALUE=$(echo "${PROCESS}" | awk '{print $3}')
     QUERY=$(echo "${PROCESS}" | awk '{print $4}' | cut -c1-50)
     PID=$(echo "${PROCESS}" | awk '{print $1}')
-    METRICS="${METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
+    if [[ "${VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+      METRICS="${METRICS}\nconveior_hwRamProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
+    fi
   done
 
   # CPU usage by processes > 10%
@@ -94,7 +96,9 @@ for CONTAINER in ${CONTAINER_LIST}; do
     VALUE=$(echo "${PROCESS}" | awk '{print $3}')
     QUERY=$(echo "${PROCESS}" | awk '{print $4}' | cut -c1-50)
     PID=$(echo "${PROCESS}" | awk '{print $1}')
-    METRICS="${METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
+    if [[ "${VALUE}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+      METRICS="${METRICS}\nconveior_hwCpuProcess{label_name=\"${CONTAINER_NAME}/${PID}/${USER}/${QUERY}\"} ${VALUE}"
+    fi
   done
 done
 
@@ -103,7 +107,9 @@ while read -r CONTAINER; do
   CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   CONTAINER_DATE_STR=$(echo "${CONTAINER}" | awk -F";" '{print $2}')
   CONTAINER_DATE=$(date -d "${CONTAINER_DATE_STR}" +"%s")
-  METRICS="${METRICS}\nconveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
+  if [ -n "${CONTAINER_DATE}" ]; then
+    METRICS="${METRICS}\nconveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
+  fi
 done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
 
 # Push metrics to Prometheus Pushgateway
