@@ -36,27 +36,34 @@ done < <(df -h | grep -E '^/dev/')
 CONTAINER_LIST=$(docker ps -f status=running --format="{{.Names}};{{.Size}}")
 for CONTAINER in ${CONTAINER_LIST}; do
   CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
-  CONTAINER_SIZE=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk -F"virtual " '{print $2}' | rev | cut -c3- | rev | numfmt --from=iec)
+  CONTAINER_SIZE=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk -F" " '{print $1}' | numfmt --from=iec 2>/dev/null)
+
+  if [ -n "${CONTAINER_SIZE}" ]; then
+    # Docker size
+    METRICS="${METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
+  fi
 
   # Network usage
-  networkRx1=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/rx_bytes)
-  networkTx1=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/tx_bytes)
+  networkRx1=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/rx_bytes 2>/dev/null)
+  networkTx1=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/tx_bytes 2>/dev/null)
   sleep 1
-  networkRx2=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/rx_bytes)
-  networkTx2=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/tx_bytes)
-  RX=$((networkRx2 - networkRx1))
-  TX=$((networkTx2 - networkTx1))
-  METRICS="${METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"rx\"} ${RX}"
-  METRICS="${METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"tx\"} ${TX}"
-
-  # Docker size
-  METRICS="${METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
+  networkRx2=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/rx_bytes 2>/dev/null)
+  networkTx2=$(docker exec -i "${CONTAINER_NAME}" cat /sys/class/net/eth0/statistics/tx_bytes 2>/dev/null)
+  
+  if [ -n "${networkRx1}" ] && [ -n "${networkTx1}" ] && [ -n "${networkRx2}" ] && [ -n "${networkTx2}" ]; then
+    RX=$((networkRx2 - networkRx1))
+    TX=$((networkTx2 - networkTx1))
+    METRICS="${METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"rx\"} ${RX}"
+    METRICS="${METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"tx\"} ${TX}"
+  fi
 
   # Docker volume size
   VOLUME_MOUNTS=$(docker inspect -f '{{ json .Mounts }}' "${CONTAINER_NAME}" | jq -r '.[] | select(.Type=="volume") | .Destination')
   for VOLUME in ${VOLUME_MOUNTS}; do
-    VOLUME_SIZE=$(docker exec -i "${CONTAINER_NAME}" du -sb "${VOLUME}" | awk '{print $1}')
-    METRICS="${METRICS}\nconveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
+    VOLUME_SIZE=$(docker exec -i "${CONTAINER_NAME}" du -sb "${VOLUME}" | awk '{print $1}' 2>/dev/null)
+    if [ -n "${VOLUME_SIZE}" ]; then
+      METRICS="${METRICS}\nconveior_hwDockerVolumeSize{label_name=\"${CONTAINER_NAME}\",volume_path=\"${VOLUME}\"} ${VOLUME_SIZE}"
+    fi
   done
 
   # Process metrics
@@ -64,7 +71,9 @@ for CONTAINER in ${CONTAINER_LIST}; do
   PIDS=$(docker exec -i "${CONTAINER_NAME}" ps -e -o pid | tail -n +2)
   for PID in ${PIDS}; do
     THREADS=$(docker exec -i "${CONTAINER_NAME}" cat /proc/"${PID}"/status 2>/dev/null | awk '/Threads:/ {print $2}')
-    THREAD_COUNT=$((THREAD_COUNT + THREADS))
+    if [ -n "${THREADS}" ]; then
+      THREAD_COUNT=$((THREAD_COUNT + THREADS))
+    fi
   done
   METRICS="${METRICS}\nconveior_hwProcess{label_name=\"${CONTAINER_NAME}\"} ${THREAD_COUNT}"
 
