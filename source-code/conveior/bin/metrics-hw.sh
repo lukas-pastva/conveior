@@ -100,9 +100,6 @@ while read -r CONTAINER; do
   fi
 done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
 
-# Echo all metrics at once
-echo -e "${METRICS}"
-
 # Push metrics to Prometheus Pushgateway
 GW_URL=$(yq e ".config.prometheus_pushgateway" "${CONFIG_FILE_DIR}")
 if [ -z "${GW_URL}" ]; then
