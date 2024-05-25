@@ -49,15 +49,15 @@ process_container() {
   fi
 
   # Network usage
-  network_stats1=($(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes; cat /sys/class/net/eth0/statistics/tx_bytes' | tr '\n' ' '))
+  network_stats1=$(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes; cat /sys/class/net/eth0/statistics/tx_bytes')
+  network_stats1="${network_stats1//$'\n'/ }"
+  networkRx1="${network_stats1%% *}"
+  networkTx1="${network_stats1#* }"
   sleep 1
-  network_stats2=($(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes; cat /sys/class/net/eth0/statistics/tx_bytes' | tr '\n' ' '))
-
-  networkRx1=${network_stats1[0]}
-  networkTx1=${network_stats1[1]}
-  networkRx2=${network_stats2[0]}
-  networkTx2=${network_stats2[1]}
-  echo "networkRx1: $networkRx1, networkTx1: $networkTx1, networkRx2: $networkRx2, networkTx2: $networkTx2"
+  network_stats2=$(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes; cat /sys/class/net/eth0/statistics/tx_bytes')
+  network_stats2="${network_stats1//$'\n'/ }"
+  networkRx2="${network_stats2%% *}"
+  networkTx2="${network_stats2#* }"
 
   if [[ -n "${networkRx1}" && -n "${networkTx1}" && -n "${networkRx2}" && -n "${networkTx2}" ]]; then
     local RX=$((networkRx2 - networkRx1))
@@ -65,7 +65,6 @@ process_container() {
     CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"rx\"} ${RX}"
     CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwNetwork{label_name=\"${CONTAINER_NAME}\",query_name=\"tx\"} ${TX}"
   fi
-
   
   # Docker volume size
   VOLUME_MOUNTS=$(docker inspect -f '{{ json .Mounts }}' "${CONTAINER_NAME}" | jq -r '.[] | select(.Type=="volume") | .Destination')
@@ -113,8 +112,6 @@ while read -r CONTAINER; do
     METRICS="${METRICS}\nconveior_hwDockerLs{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_DATE}"
   fi
 done < <(docker container ls --format="{{.Names}}" | xargs -n1 docker container inspect --format='{{.Name}};{{.State.StartedAt}}' | awk -F"/" '{print $2}')
-
-echo -e ${METRICS}
 
 # Push metrics to Prometheus Pushgateway
 GW_URL=$(yq e ".config.prometheus_pushgateway" "${CONFIG_FILE_DIR}")
