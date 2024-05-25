@@ -34,7 +34,8 @@ process_container() {
   local CONTAINER_METRICS=""
   local CONTAINER_NAME=$(echo "${CONTAINER}" | awk -F";" '{print $1}')
   local CONTAINER_SIZE_RAW=$(echo "${CONTAINER}" | awk -F";" '{print $2}' | awk '{print $1}')
-  local CONTAINER_SIZE=$(numfmt --from=iec <<< "${CONTAINER_SIZE_RAW}" 2>/dev/null)
+  local CONTAINER_SIZE_RAW_CORRECTED=$(echo "${CONTAINER_SIZE_RAW}" | sed -e 's/kB$/K/' -e 's/MB$/M/' -e 's/GB$/G/' -e 's/B$//')
+  local CONTAINER_SIZE=$(numfmt --from=iec <<< "${CONTAINER_SIZE_RAW_CORRECTED}" 2>/dev/null)
 
   if [[ -n "${CONTAINER_SIZE}" ]]; then
     CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
