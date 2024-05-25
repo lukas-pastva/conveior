@@ -37,8 +37,15 @@ process_container() {
   local CONTAINER_SIZE_RAW_CORRECTED=$(echo "${CONTAINER_SIZE_RAW}" | sed -e 's/kB$/K/' -e 's/MB$/M/' -e 's/GB$/G/' -e 's/B$//')
   local CONTAINER_SIZE=$(numfmt --from=iec <<< "${CONTAINER_SIZE_RAW_CORRECTED}" 2>/dev/null)
 
+  local VIRTUAL_SIZE_RAW=$(echo "${CONTAINER}" | awk -F"[()]" '{print $2}' | awk '{print $2}')
+  local VIRTUAL_SIZE_RAW_CORRECTED=$(echo "${VIRTUAL_SIZE_RAW}" | sed -e 's/kB$/K/' -e 's/MB$/M/' -e 's/GB$/G/' -e 's/B$//')
+  local VIRTUAL_SIZE=$(numfmt --from=iec <<< "${VIRTUAL_SIZE_RAW_CORRECTED}" 2>/dev/null)
+
   if [[ -n "${CONTAINER_SIZE}" ]]; then
     CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwDockerSize{label_name=\"${CONTAINER_NAME}\"} ${CONTAINER_SIZE}"
+  fi
+  if [[ -n "${VIRTUAL_SIZE}" ]]; then
+    CONTAINER_METRICS="${CONTAINER_METRICS}\nconveior_hwDockerVirtualSize{label_name=\"${CONTAINER_NAME}\"} ${VIRTUAL_SIZE}"
   fi
 
   # Network usage
@@ -79,7 +86,6 @@ process_containers_memory_and_cpu() {
     fi
   done
 }
-
 
 # Process each container sequentially
 for CONTAINER in ${CONTAINER_LIST}; do
