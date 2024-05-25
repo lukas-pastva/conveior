@@ -49,9 +49,9 @@ process_container() {
   fi
 
   # Network usage
-  read networkRx1 networkTx1 < <(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes /sys/class/net/eth0/statistics/tx_bytes')
+  read networkRx1 networkTx1 < <(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes; cat /sys/class/net/eth0/statistics/tx_bytes' | tr '\n' ' ')
   sleep 1
-  read networkRx2 networkTx2 < <(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes /sys/class/net/eth0/statistics/tx_bytes')
+  read networkRx2 networkTx2 < <(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes; cat /sys/class/net/eth0/statistics/tx_bytes' | tr '\n' ' ')
 
   if [[ -n "${networkRx1}" && -n "${networkTx1}" && -n "${networkRx2}" && -n "${networkTx2}" ]]; then
     local RX=$((networkRx2 - networkRx1))
