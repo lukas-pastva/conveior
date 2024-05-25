@@ -55,7 +55,7 @@ process_container() {
   networkTx1="${network_stats1#* }"
   sleep 1
   network_stats2=$(docker exec -i "${CONTAINER_NAME}" sh -c 'cat /sys/class/net/eth0/statistics/rx_bytes; cat /sys/class/net/eth0/statistics/tx_bytes')
-  network_stats2="${network_stats1//$'\n'/ }"
+  network_stats2="${network_stats2//$'\n'/ }"
   networkRx2="${network_stats2%% *}"
   networkTx2="${network_stats2#* }"
 
