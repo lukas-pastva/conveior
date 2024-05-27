@@ -6,23 +6,9 @@ source functions.inc.sh
 EPOCH=$(date +%s)
 METRICS="conveior_hwHeartbeat ${EPOCH}"
 
-# Calculate boot time in milliseconds
-boot_time_secs=$(cut -d. -f1 /proc/uptime)
-bootTime=$(( (EPOCH - boot_time_secs) * 1000 ))
-METRICS="${METRICS}\nconveior_hwBoot{label_name=\"boot\"} ${bootTime}"
-
-# Gather RAM and Swap metrics in one go
-read totalRam usedRam totalSwap usedSwap <<< $(free | awk '/Mem:/ {totalRam=$2*1024; usedRam=$3*1024} /Swap:/ {totalSwap=$2*1024; usedSwap=$3*1024} END {print totalRam, usedRam, totalSwap, usedSwap}')
-METRICS="${METRICS}\nconveior_hwRam{label_name=\"total\"} ${totalRam}\nconveior_hwRam{label_name=\"used\"} ${usedRam}\nconveior_hwSwap{label_name=\"total\"} ${totalSwap}\nconveior_hwSwap{label_name=\"used\"} ${usedSwap}"
-
 # Gather CPU usage
 cpu=$(vmstat 1 2 | tail -1 | awk '{print 100 - $15}')
 METRICS="${METRICS}\nconveior_hwCpu{label_name=\"used\"} ${cpu}"
-
-# Gather Disk usage
-while read -r DISK_NAME DISK_VALUE; do
-  METRICS="${METRICS}\nconveior_hwDisk{label_name=\"${DISK_NAME}\"} ${DISK_VALUE}"
-done < <(df -h | grep -E '^/dev/' | awk '{print $1, $5}' | tr -d '%')
 
 # Gather Docker metrics
 CONTAINER_LIST=$(docker ps -f status=running --format="{{.Names}};{{.Size}}")
