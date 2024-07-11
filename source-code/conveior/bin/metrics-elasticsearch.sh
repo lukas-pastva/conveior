@@ -4,6 +4,7 @@ source functions.inc.sh
 export PODS=$(yq e '.config.metrics.elasticsearch.[].name' ${CONFIG_FILE_DIR})
 export METRICS=""
 export IFS=$'\n'
+
 for POD in $PODS;
 do
   if [[ "${POD}" != "" ]]; then
@@ -38,7 +39,11 @@ do
       store_size=$(echo "${row}" | jq -r '.["store.size"]')
       pri_store_size=$(echo "${row}" | jq -r '.["pri.store.size"]')
 
-      labels="health=\"${health}\",status=\"${status}\",index=\"${index}\",uuid=\"${uuid}\",pri=\"${pri}\",rep=\"${rep}\",docs_count=\"${docs_count}\",docs_deleted=\"${docs_deleted}\",pri_store_size=\"${pri_store_size}\""
+      # Get index settings to retrieve creation date
+      index_settings=$(docker exec -i ${POD} curl -s --user "${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}" "http://127.0.0.1:9200/${index}/_settings")
+      creation_date_ms=$(echo "${index_settings}" | jq -r ".[\"${index}\"].settings.index.creation_date")
+
+      labels="health=\"${health}\",status=\"${status}\",index=\"${index}\",uuid=\"${uuid}\",pri=\"${pri}\",rep=\"${rep}\",docs_count=\"${docs_count}\",docs_deleted=\"${docs_deleted}\",pri_store_size=\"${pri_store_size}\",creation_date=\"${creation_date_ms}\""
       METRICS=$(echo -e "$METRICS\nconveior_elasticsearch_indices_store_size{${labels}} ${store_size}")
     done
   fi

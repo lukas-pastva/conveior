@@ -48,8 +48,8 @@ do
 
     echo_message "Performing Elasticsearch backup process"
 
-    echo_message "Zipping ${VOLUME}/${FILE}"
-    docker exec -i ${POD} zip -rqq ${VOLUME}/${FILE} ${VOLUME}
+    echo_message "Zipping ${VOLUME}${FILE}"
+    docker exec -i ${POD} zip -rqq ${VOLUME}${FILE} ${VOLUME}
 
     echo_message "Deleting elasticsearch backup"
     docker exec -i ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX GET 127.0.0.1:9200/_cat/snapshots/backup_repository | awk '{print \$1}' | while read SNAPSHOT ; do curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX DELETE 127.0.0.1:9200/_snapshot/backup_repository/\${SNAPSHOT}; done"
