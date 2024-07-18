@@ -43,8 +43,14 @@ do
       index_settings=$(docker exec -i ${POD} curl -s --user "${ELASTICSEARCH_USERNAME}:${ELASTICSEARCH_PASSWORD}" "http://127.0.0.1:9200/${index}/_settings")
       creation_date_ms=$(echo "${index_settings}" | jq -r ".[\"${index}\"].settings.index.creation_date")
 
-      labels="health=\"${health}\",status=\"${status}\",index=\"${index}\",uuid=\"${uuid}\",pri=\"${pri}\",rep=\"${rep}\",docs_count=\"${docs_count}\",docs_deleted=\"${docs_deleted}\",pri_store_size=\"${pri_store_size}\",creation_date=\"${creation_date_ms}\""
+      labels="health=\"${health}\",status=\"${status}\",index=\"${index}\",uuid=\"${uuid}\",pri=\"${pri}\",rep=\"${rep}\",docs_count=\"${docs_count}\",docs_deleted=\"${docs_deleted}\",pri_store_size=\"${pri_store_size}\""
       METRICS=$(echo -e "$METRICS\nconveior_elasticsearch_indices_store_size{${labels}} ${store_size}")
+
+      # Add creation date metric only if it's not null
+      if [[ "${creation_date_ms}" != "null" ]]; then
+        creation_date_labels="index=\"${index}\""
+        METRICS=$(echo -e "$METRICS\nconveior_elasticsearch_index_creation_date{${creation_date_labels}} ${creation_date_ms}")
+      fi
     done
   fi
 done
