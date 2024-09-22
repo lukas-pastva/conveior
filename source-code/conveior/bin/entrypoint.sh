@@ -50,11 +50,15 @@ endpoint = ${S3_URL}
   echo "$config" > "$config_file"
 fi
 
-# if set gateway, then stating go app
-GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
-if [ -z "$GW_URL" ]; then
-  /usr/local/bin/conveior
-fi
+if [ -z "${EVENT_DRIVEN+x}" ]; then
+  # if set gateway, then stating go app
+  GW_URL=$(yq e ".config.prometheus_pushgateway" ${CONFIG_FILE_DIR})
+  if [ -z "$GW_URL" ]; then
+    /usr/local/bin/conveior
+  fi
 
-# else start cron
-service cron start & tail -f /var/log/cron.log
+  # else start cron
+  service cron start & tail -f /var/log/cron.log
+else
+    echo "EVENT_DRIVEN is defined. Scheduling and or gateway push execution skipped."
+fi
