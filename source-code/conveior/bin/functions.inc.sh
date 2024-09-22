@@ -86,7 +86,7 @@ upload_file_s3_rclone () {
     local ZIP_FILE="${1}"
     local FILE_S3="${2}"
 
-    rclone --config $HOME/.config/rclone/rclone.conf copy "${ZIP_FILE}" "s3:${BUCKET_NAME}/${FILE_S3%/*}"
+    rclone --config /tmp/rclone.conf copy "${ZIP_FILE}" "s3:${BUCKET_NAME}/${FILE_S3%/*}"
 }
 
 upload_file_s3_v4 () {

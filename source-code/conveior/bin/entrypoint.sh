@@ -45,8 +45,7 @@ endpoint = ${S3_URL}
 "
 
   # Write configuration to file
-  config_file="$HOME/.config/rclone/rclone.conf"
-  mkdir -p "$(dirname "$config_file")"
+  config_file="/tmp/rclone.conf"
   echo "$config" > "$config_file"
 fi
 
