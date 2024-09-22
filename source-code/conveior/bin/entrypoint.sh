@@ -45,8 +45,7 @@ endpoint = ${S3_URL}
 "
 
   # Write configuration to file
-  config_file="/tmp/rclone.conf"
-  echo "$config" > "$config_file"
+  echo "$config" > "/tmp/rclone.conf"
 fi
 
 if [ -z "${EVENT_DRIVEN+x}" ]; then
