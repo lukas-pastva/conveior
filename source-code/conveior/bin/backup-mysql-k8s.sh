@@ -47,7 +47,7 @@ do
     done
     echo_message "Found DBs: ${DATABASES_STR}"
     if [[ "${DATABASES_STR}" != "" ]]; then
-      kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c "mysqldump --user=${SQL_USER} --password='${SQL_PASS}' --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE} 2>/dev/null"
+      kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c "mysqldump --user=${SQL_USER} --password='${SQL_PASS}' --single-transaction --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE} 2>/dev/null"
       kubectl cp "${POD_NAMESPACE}/${POD}:/tmp/${FILE}" "${SERVER_DIR}/${FILE}" >/dev/null
       kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c "rm /tmp/${FILE}"
 

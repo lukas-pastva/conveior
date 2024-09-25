@@ -28,7 +28,7 @@ do
   mkdir -p "${SERVER_DIR}"
   find "${SERVER_DIR}" -mindepth 1 -delete
 
-  docker exec -i "${POD}" bash -c "mysqldump --user=${SQL_USER} --password='${SQL_PASS}' --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE} 2>/dev/null"
+  docker exec -i "${POD}" bash -c "mysqldump --user=${SQL_USER} --password='${SQL_PASS}' --single-transaction --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE} 2>/dev/null"
   docker cp "${POD}":/tmp/${FILE} ${SERVER_DIR}
   docker exec -i "${POD}" bash -c "rm /tmp/${FILE}"
 
