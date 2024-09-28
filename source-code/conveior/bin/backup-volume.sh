@@ -1,84 +1,78 @@
 #!/bin/bash
-source functions.inc.sh
 
 set -e
 
-export PODS=$(yq e '.config.backups.elasticsearch.[].name' ${CONFIG_FILE_DIR})
-export IFS=$','
-for POD in $PODS;
-do
+# Source the existing functions and configuration
+source functions.inc.sh
 
-  export ELASTIC_USER=$(yq e ".config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].username" ${CONFIG_FILE_DIR})
-  export ELASTIC_PASSWD=$(yq e ".config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].password" ${CONFIG_FILE_DIR})
+# Configuration variables
+BACKUP_TEMP_DIR="/tmp/backup_volumes"
+SPLIT_SIZE="5G"  # Size for split files
 
-  export VOLUME="/tmp/backup/"
-  export SERVER_DIR="/tmp/${POD}"
-  export FILE="backup"
-  export ZIP_FILE="${SERVER_DIR}/${FILE}.zip"
-  export DATA_SIZE=$(docker exec -i ${POD} du -s "/usr/share/elasticsearch/data/" | awk '{print $1}')
-  export FREE_SIZE=$(docker exec -i ${POD} df -T | awk 'NR==2' | awk '{print $5}')
-  mkdir -p "${SERVER_DIR}"
-  find "${SERVER_DIR}" -mindepth 1 -delete
+# Create a temporary directory for backups
+mkdir -p "${BACKUP_TEMP_DIR}"
+find "${BACKUP_TEMP_DIR}" -mindepth 1 -delete
 
-  echo_message "Creating backup repository"
-  docker exec ${POD} bash -c 'curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX PUT "127.0.0.1:9200/_snapshot/backup_repository?pretty" -H "Content-Type: application/json" -d"{\"type\":\"fs\",\"settings\":{\"location\":\"/tmp/backup\"}}"'
+# Extract volume configurations from the configuration file and iterate over them
+yq e '.config.backups.volumes[] | "\(.name)\t\(.volumeName)"' "${CONFIG_FILE_DIR}" | while IFS=$'\t' read -r NAME VOLUME_NAME; do
+    echo "Starting backup for volume: ${NAME} (Docker Volume: ${VOLUME_NAME})"
 
-  echo_message "Deleting old backup"
-  docker exec -i ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX GET 127.0.0.1:9200/_cat/snapshots/backup_repository | awk '{print \$1}' | while read SNAPSHOT ; do curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX DELETE 127.0.0.1:9200/_snapshot/backup_repository/\${SNAPSHOT}; done"
-  find "${SERVER_DIR}" -mindepth 1 -delete
-  sleep 30
-
-  echo_message "Backing up elasticsearch $POD"
-  DATA_SIZE=$(echo "$DATA_SIZE * 1.8" | bc)
-  if [ $(echo "$FREE_SIZE > $DATA_SIZE" | bc) -eq 1 ]; then
-    export EPOCH=$(date +%s)
-    echo_message "EPOCH: $EPOCH"
-    docker exec ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX PUT 127.0.0.1:9200/_snapshot/backup_repository/snapshot-${EPOCH}"
-    for i in {1..1000}
-    do
-      export STATE=$(docker exec ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX GET 127.0.0.1:9200/_snapshot/backup_repository/snapshot-${EPOCH}/_status?pretty | grep SUCCESS")
-
-      if [[ "${STATE}" == *"SUCCESS"* ]]; then
-        break
-      else
-        echo -n "."
-        sleep 10
-      fi
-    done
-
-    echo_message "Performing Elasticsearch backup process"
-
-    echo_message "Zipping ${VOLUME}${FILE}"
-    docker exec -i ${POD} zip -rqq ${VOLUME}${FILE} ${VOLUME}
-
-    echo_message "Deleting elasticsearch backup"
-    docker exec -i ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX GET 127.0.0.1:9200/_cat/snapshots/backup_repository | awk '{print \$1}' | while read SNAPSHOT ; do curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX DELETE 127.0.0.1:9200/_snapshot/backup_repository/\${SNAPSHOT}; done"
-    sleep 30
-
-    echo_message "Copying ${POD}:${VOLUME}${FILE}.zip"
-    docker cp ${POD}:${VOLUME}${FILE}.zip ${SERVER_DIR}
-
-    echo_message "Deleting ${VOLUME}${FILE}.zip"
-    docker exec -i ${POD} rm ${VOLUME}${FILE}.zip
-
-    echo_message "Splitting ${ZIP_FILE}"
-    split -a 1 -b 5G -d "${ZIP_FILE}" "${ZIP_FILE}."
-
-    echo_message "Deleting ${ZIP_FILE}"
-    rm "${ZIP_FILE}"
-
-    find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;
-    do
-      export SPLIT_FILE_ONLY=$(echo "${SPLIT_FILE}" | awk -F"/" '{print $(NF)}')
-      upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-elasticsearch/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}"
-      echo_message "Deleting ${SERVER_DIR}/${SPLIT_FILE_ONLY} || true"
-      rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}" || true
-    done
-
-    echo_message "Deleting the backup from elasticsearch"
+    # Define directories and files
+    SERVER_DIR="${BACKUP_TEMP_DIR}/${NAME}"
+    ZIP_FILE="${SERVER_DIR}/backup.zip"
+    mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
 
-  else
-    echo_message "Not enough free disk space $FREE_SIZE < $DATA_SIZE * 1.8, not backing up"
-  fi
+    # Check if the Docker volume exists
+    if ! docker volume inspect "${VOLUME_NAME}" >/dev/null 2>&1; then
+        echo "Docker volume '${VOLUME_NAME}' not found. Skipping backup for '${NAME}'."
+        continue
+    fi
+
+    # Check disk space on the host (optional, adjust as needed)
+    DATA_SIZE=$(docker run --rm -v "${VOLUME_NAME}":/data alpine sh -c "du -s /data | awk '{print \$1}'")
+    DATA_SIZE_BYTES=$((DATA_SIZE * 1024))
+    FREE_SIZE=$(df --output=avail "${BACKUP_TEMP_DIR}" | tail -1)
+    if [ "${FREE_SIZE}" -lt "${DATA_SIZE_BYTES}" ]; then
+        echo "Not enough free disk space. Required: ${DATA_SIZE_BYTES} KB, Available: ${FREE_SIZE} KB. Skipping backup for '${NAME}'."
+        continue
+    fi
+
+    # Run the backup container to zip the Docker volume
+    echo "Running backup container for volume '${NAME}'..."
+    docker run --rm \
+        -v "${VOLUME_NAME}":/data \
+        -v "${SERVER_DIR}":/backup \
+        alpine:latest \
+        sh -c "apk add --no-cache zip && zip -r /backup/backup.zip /data"
+
+    echo "Backup container completed for volume '${NAME}'."
+
+    # Split the zip file into manageable chunks
+    echo "Splitting the backup zip file for volume '${NAME}'..."
+    split -a 3 -b "${SPLIT_SIZE}" "${ZIP_FILE}" "${ZIP_FILE}."
+
+    echo "Backup zip file split into chunks for volume '${NAME}'."
+
+    # Upload each split file
+    echo "Uploading split backup files for volume '${NAME}'..."
+    find "${SERVER_DIR}" -name "backup.zip.*" | while read -r SPLIT_FILE; do
+        SPLIT_FILE_NAME=$(basename "${SPLIT_FILE}")
+        upload_file "${SPLIT_FILE}" "backup-volumes/${ANTI_DATE}-${DATE}/${SPLIT_FILE_NAME}"
+        echo "Uploaded '${SPLIT_FILE_NAME}' to backup storage."
+        rm -f "${SPLIT_FILE}"
+    done
+
+    echo "All split files uploaded for volume '${NAME}'."
+
+    # Clean up the server directory
+    find "${SERVER_DIR}" -mindepth 1 -delete
+    echo "Cleaned up temporary backup files for volume '${NAME}'."
+
 done
+
+# Final cleanup
+rm -rf "${BACKUP_TEMP_DIR}"
+echo "Volume backup process completed successfully."
+
+exit 0
