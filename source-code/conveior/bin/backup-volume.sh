@@ -61,13 +61,29 @@ echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
 
     # Run the backup container to zip the Docker volume
     echo "Running backup container for volume '${NAME}'..."
+
+    # Temporarily disable 'set -e' to allow zip to fail without exiting the script
+    set +e
+
     docker run --rm \
-        -v "${VOLUME_NAME}":/data \
+        -u 0 \
+        -v "${VOLUME_NAME}":/data:ro \
         -v "${SERVER_DIR}":/backup \
         alpine:latest \
-        sh -c "apk add --no-cache zip && zip -r /backup/backup.zip /data"
+        sh -c "apk add --no-cache zip && zip -r /backup/backup.zip /data" \
+        2> "${SERVER_DIR}/backup_errors.log"
 
-    echo "Backup container completed for volume '${NAME}'."
+    ZIP_EXIT_CODE=$?
+
+    # Re-enable 'set -e'
+    set -e
+
+    if [ ${ZIP_EXIT_CODE} -ne 0 ]; then
+        echo "Warnings encountered during zipping for volume '${NAME}'. Check '${SERVER_DIR}/backup_errors.log' for details."
+        # Optionally, you can process the log file here or notify
+    else
+        echo "Backup container completed successfully for volume '${NAME}'."
+    fi
 
     # Split the zip file into manageable chunks
     echo "Splitting the backup zip file for volume '${NAME}'..."
@@ -96,5 +112,7 @@ done
 # Final cleanup
 rm -rf "${BACKUP_TEMP_DIR}"
 echo "Volume backup process completed successfully."
+
+set +x  # Stop tracing
 
 exit 0
