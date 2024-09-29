@@ -59,41 +59,54 @@ echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
     fi
     echo "Sufficient disk space available."
 
-    # Run the backup container to zip the Docker volume
+    # Run the backup container with enhanced logging
     echo "Running backup container for volume '${NAME}'..."
 
-    # Temporarily disable 'set -e' to allow zip to fail without exiting the script
     set +e
 
     docker run --rm \
         -u 0 \
         -v "${VOLUME_NAME}":/data:ro \
         -v "${SERVER_DIR}":/backup \
-        alpine:latest \
-        sh -c "apk add --no-cache zip && zip -r /backup/backup.zip /data" \
-        2> "${SERVER_DIR}/backup_errors.log"
+        alcdpine:latest \
+        sh -c "apk add --no-cache tar && ls -la /data && tar -czvf /backup/backup.tar.gz -C /data ." \
+        > "${SERVER_DIR}/backup_stdout.log" 2> "${SERVER_DIR}/backup_errors.log"
 
-    ZIP_EXIT_CODE=$?
+    TAR_EXIT_CODE=$?
 
-    # Re-enable 'set -e'
     set -e
 
-    if [ ${ZIP_EXIT_CODE} -ne 0 ]; then
-        echo "Warnings encountered during zipping for volume '${NAME}'. Check '${SERVER_DIR}/backup_errors.log' for details."
-        # Optionally, you can process the log file here or notify
+    if [ ${TAR_EXIT_CODE} -ne 0 ]; then
+        echo "Warnings encountered during tar'ing for volume '${NAME}'. Check '${SERVER_DIR}/backup_errors.log' and '${SERVER_DIR}/backup_stdout.log' for details."
     else
         echo "Backup container completed successfully for volume '${NAME}'."
     fi
 
-    # Split the zip file into manageable chunks
-    echo "Splitting the backup zip file for volume '${NAME}'..."
-    split -a 3 -b "${SPLIT_SIZE}" "${ZIP_FILE}" "${ZIP_FILE}."
 
-    echo "Backup zip file split into chunks for volume '${NAME}'."
+    # **List the backup directory contents**
+    echo "Listing contents of backup directory '${SERVER_DIR}':"
+    ls -lh "${SERVER_DIR}"
+
+    # Define the backup file
+    BACKUP_FILE="${SERVER_DIR}/backup.tar.gz"
+
+    # Check if backup.tar.gz exists and has a size greater than zero
+    if [ -f "${BACKUP_FILE}" ] && [ -s "${BACKUP_FILE}" ]; then
+        echo "Backup tar file created successfully for volume '${NAME}'."
+    else
+        echo "Error: Backup tar file '${BACKUP_FILE}' was not created or is empty. Skipping split and upload."
+        continue
+    fi
+
+    # Split the tar file into manageable chunks
+    echo "Splitting the backup tar file for volume '${NAME}'..."
+    split -a 3 -b "${SPLIT_SIZE}" "${BACKUP_FILE}" "${BACKUP_FILE}."
+
+    echo "Backup tar file split into chunks for volume '${NAME}'."
 
     # Upload each split file
     echo "Uploading split backup files for volume '${NAME}'..."
-    find "${SERVER_DIR}" -name "backup.zip.*" | while read -r SPLIT_FILE; do
+    find "${SERVER_DIR}" -name "backup.tar.gz.*" | while read -r SPLIT_FILE; do
         SPLIT_FILE_NAME=$(basename "${SPLIT_FILE}")
         echo "Uploading '${SPLIT_FILE_NAME}'..."
         upload_file "${SPLIT_FILE}" "backup-volumes/${ANTI_DATE}-${DATE}/${SPLIT_FILE_NAME}"
@@ -110,7 +123,7 @@ echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
 done
 
 # Final cleanup
-rm -rf "${BACKUP_TEMP_DIR}"
+# rm -rf "${BACKUP_TEMP_DIR}"
 echo "Volume backup process completed successfully."
 
 set +x  # Stop tracing
