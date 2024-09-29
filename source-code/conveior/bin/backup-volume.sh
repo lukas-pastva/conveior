@@ -7,7 +7,10 @@ BACKUP_TEMP_DIR="/tmp/backup_volumes"
 SPLIT_SIZE="5G"
 CURRENT_DAY=$(date +%u)
 
-if [[ $CURRENT_DAY -eq 7 ]]; then
+# Check if today is Sunday (7) or RUN_MANUALLY is set
+if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
+
+    echo "Backup process initiated."
 
     # Create a temporary directory for backups
     mkdir -p "${BACKUP_TEMP_DIR}"
@@ -34,10 +37,12 @@ if [[ $CURRENT_DAY -eq 7 ]]; then
         FREE_SIZE_GB=$(awk "BEGIN {printf \"%.2f\", ${FREE_SIZE_KB}/1048576}")
         echo "Data size: ${DATA_SIZE_GB} GB"
         echo "Free size: ${FREE_SIZE_GB} GB"
+
         if [ "${FREE_SIZE_KB}" -lt "${DATA_SIZE_KB}" ]; then
             echo "Not enough free disk space. Required: ${DATA_SIZE_GB} GB, Available: ${FREE_SIZE_GB} GB. Skipping backup for '${NAME}'."
             continue
         fi
+
         echo "Sufficient disk space available."
 
         TEMP_CONTAINER_NAME="temp-container-${NAME//[^a-zA-Z0-9]/-}"
@@ -65,10 +70,13 @@ if [[ $CURRENT_DAY -eq 7 ]]; then
             echo "Uploaded '${SPLIT_FILE_NAME}' to backup storage."
             rm -f "${SPLIT_FILE}"
         done
+
         find "${SERVER_DIR}" -mindepth 1 -delete
     done
 
     rm -rf "${BACKUP_TEMP_DIR}"
     echo "Volume backup process completed successfully."
 
+else
+    echo "Backup script is not running today (${CURRENT_DAY}). To run manually, set the RUN_MANUALLY variable."
 fi
