@@ -42,13 +42,14 @@ echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
 
     # Define directories and files
     SERVER_DIR="${BACKUP_TEMP_DIR}/${NAME}"
+    BACKUP_FILE="${SERVER_DIR}/backup.tar"
     ZIP_FILE="${SERVER_DIR}/backup.zip"
     mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
 
     # Check disk space on the host (optional, adjust as needed)
     echo "Checking disk space..."
-    DATA_SIZE=$(docker run --rm -v "${VOLUME_NAME}":/data alpine sh -c "du -s /data | awk '{print \$1}'")
+    DATA_SIZE=$(docker run --rm -v "${VOLUME_NAME}":/data busybox sh -c "du -s /data | awk '{print \$1}'")
     DATA_SIZE_BYTES=$((DATA_SIZE * 1024))
     FREE_SIZE=$(df --output=avail "${BACKUP_TEMP_DIR}" | tail -1)
     echo "Data size: ${DATA_SIZE} blocks (${DATA_SIZE_BYTES} KB)"
@@ -59,44 +60,38 @@ echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
     fi
     echo "Sufficient disk space available."
 
-    # Run the backup container with enhanced logging
-    echo "Running backup container for volume '${NAME}'..."
+    # Create a unique temporary container name
+    TEMP_CONTAINER_NAME="temp-container-${NAME//[^a-zA-Z0-9]/-}"
 
-    set +e
+    # Run the temporary container in detached mode
+    echo "Creating temporary container '${TEMP_CONTAINER_NAME}' for volume '${VOLUME_NAME}'..."
+    docker run --rm -d --name "${TEMP_CONTAINER_NAME}" -v "${VOLUME_NAME}":/source busybox sleep infinity
 
-    docker run --rm \
-        -u 0 \
-        -v "${VOLUME_NAME}":/data:ro \
-        -v "${SERVER_DIR}":/backup \
-        alcdpine:latest \
-        sh -c "apk add --no-cache tar && ls -la /data && tar -czvf /backup/backup.tar.gz -C /data ." \
-        > "${SERVER_DIR}/backup_stdout.log" 2> "${SERVER_DIR}/backup_errors.log"
+    # Execute the tar command inside the temporary container
+    echo "Creating tar archive inside container '${TEMP_CONTAINER_NAME}'..."
+    docker exec "${TEMP_CONTAINER_NAME}" sh -c "tar cvf /backup.tar -C /source ." > "${SERVER_DIR}/backup_stdout.log" 2> "${SERVER_DIR}/backup_errors.log"
 
-    TAR_EXIT_CODE=$?
+    # Copy the backup.tar from the container to the host
+    echo "Copying 'backup.tar' from container '${TEMP_CONTAINER_NAME}' to host..."
+    docker cp "${TEMP_CONTAINER_NAME}":/backup.tar "${BACKUP_FILE}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
 
-    set -e
+    # Stop and remove the temporary container
+    echo "Stopping and removing temporary container '${TEMP_CONTAINER_NAME}'..."
+    docker stop "${TEMP_CONTAINER_NAME}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
 
-    if [ ${TAR_EXIT_CODE} -ne 0 ]; then
-        echo "Warnings encountered during tar'ing for volume '${NAME}'. Check '${SERVER_DIR}/backup_errors.log' and '${SERVER_DIR}/backup_stdout.log' for details."
-    else
-        echo "Backup container completed successfully for volume '${NAME}'."
-    fi
-
-
-    # **List the backup directory contents**
-    echo "Listing contents of backup directory '${SERVER_DIR}':"
-    ls -lh "${SERVER_DIR}"
-
-    # Define the backup file
-    BACKUP_FILE="${SERVER_DIR}/backup.tar.gz"
-
-    # Check if backup.tar.gz exists and has a size greater than zero
+    # Verify that backup.tar exists and is not empty
     if [ -f "${BACKUP_FILE}" ] && [ -s "${BACKUP_FILE}" ]; then
         echo "Backup tar file created successfully for volume '${NAME}'."
     else
-        echo "Error: Backup tar file '${BACKUP_FILE}' was not created or is empty. Skipping split and upload."
+        echo "Error: Backup tar file '${BACKUP_FILE}' was not created or is empty. Check '${SERVER_DIR}/backup_errors.log' for details. Skipping split and upload."
         continue
     fi
+
+    # Optionally compress the tar file to save space (optional)
+    # Uncomment the following lines if you prefer to compress the tar file
+    # echo "Compressing the tar file..."
+    # gzip -c "${BACKUP_FILE}" > "${ZIP_FILE}"
+    # BACKUP_FILE="${ZIP_FILE}"
 
     # Split the tar file into manageable chunks
     echo "Splitting the backup tar file for volume '${NAME}'..."
@@ -106,7 +101,7 @@ echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
 
     # Upload each split file
     echo "Uploading split backup files for volume '${NAME}'..."
-    find "${SERVER_DIR}" -name "backup.tar.gz.*" | while read -r SPLIT_FILE; do
+    find "${SERVER_DIR}" -name "backup.tar.*" | while read -r SPLIT_FILE; do
         SPLIT_FILE_NAME=$(basename "${SPLIT_FILE}")
         echo "Uploading '${SPLIT_FILE_NAME}'..."
         upload_file "${SPLIT_FILE}" "backup-volumes/${ANTI_DATE}-${DATE}/${SPLIT_FILE_NAME}"
@@ -123,7 +118,7 @@ echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
 done
 
 # Final cleanup
-# rm -rf "${BACKUP_TEMP_DIR}"
+rm -rf "${BACKUP_TEMP_DIR}"
 echo "Volume backup process completed successfully."
 
 set +x  # Stop tracing
