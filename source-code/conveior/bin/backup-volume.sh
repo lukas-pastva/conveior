@@ -13,8 +13,31 @@ SPLIT_SIZE="5G"  # Size for split files
 mkdir -p "${BACKUP_TEMP_DIR}"
 find "${BACKUP_TEMP_DIR}" -mindepth 1 -delete
 
+# Verify that CONFIG_FILE_DIR points to a file, not a directory
+if [ -d "${CONFIG_FILE_DIR}" ]; then
+    echo "Error: CONFIG_FILE_DIR points to a directory. It should point to the YAML configuration file."
+    exit 1
+fi
+
+if [ ! -f "${CONFIG_FILE_DIR}" ]; then
+    echo "Error: Configuration file '${CONFIG_FILE_DIR}' does not exist."
+    exit 1
+fi
+
+echo "Using configuration file: ${CONFIG_FILE_DIR}"
+
 # Extract volume configurations from the configuration file and iterate over them
-yq e '.config.backups.volumes[] | "\(.name)\t\(.volumeName)"' "${CONFIG_FILE_DIR}" | while IFS=$'\t' read -r NAME VOLUME_NAME; do
+VOLUMES_OUTPUT=$(yq -r '.config.backups.volumes[] | "\(.name)|\(.volumeName)"' "${CONFIG_FILE_DIR}")
+
+# Iterate over each volume
+echo "${VOLUMES_OUTPUT}" | while IFS='|' read -r NAME VOLUME_NAME; do
+
+    # Validate that both NAME and VOLUME_NAME are not empty
+    if [ -z "${NAME}" ] || [ -z "${VOLUME_NAME}" ]; then
+        echo "Error: Either NAME or VOLUME_NAME is empty. Skipping this entry."
+        continue
+    fi
+
     echo "Starting backup for volume: ${NAME} (Docker Volume: ${VOLUME_NAME})"
 
     # Define directories and files
@@ -23,20 +46,18 @@ yq e '.config.backups.volumes[] | "\(.name)\t\(.volumeName)"' "${CONFIG_FILE_DIR
     mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
 
-    # Check if the Docker volume exists
-    if ! docker volume inspect "${VOLUME_NAME}" >/dev/null 2>&1; then
-        echo "Docker volume '${VOLUME_NAME}' not found. Skipping backup for '${NAME}'."
-        continue
-    fi
-
     # Check disk space on the host (optional, adjust as needed)
+    echo "Checking disk space..."
     DATA_SIZE=$(docker run --rm -v "${VOLUME_NAME}":/data alpine sh -c "du -s /data | awk '{print \$1}'")
     DATA_SIZE_BYTES=$((DATA_SIZE * 1024))
     FREE_SIZE=$(df --output=avail "${BACKUP_TEMP_DIR}" | tail -1)
+    echo "Data size: ${DATA_SIZE} blocks (${DATA_SIZE_BYTES} KB)"
+    echo "Free size: ${FREE_SIZE} KB"
     if [ "${FREE_SIZE}" -lt "${DATA_SIZE_BYTES}" ]; then
         echo "Not enough free disk space. Required: ${DATA_SIZE_BYTES} KB, Available: ${FREE_SIZE} KB. Skipping backup for '${NAME}'."
         continue
     fi
+    echo "Sufficient disk space available."
 
     # Run the backup container to zip the Docker volume
     echo "Running backup container for volume '${NAME}'..."
@@ -58,6 +79,7 @@ yq e '.config.backups.volumes[] | "\(.name)\t\(.volumeName)"' "${CONFIG_FILE_DIR
     echo "Uploading split backup files for volume '${NAME}'..."
     find "${SERVER_DIR}" -name "backup.zip.*" | while read -r SPLIT_FILE; do
         SPLIT_FILE_NAME=$(basename "${SPLIT_FILE}")
+        echo "Uploading '${SPLIT_FILE_NAME}'..."
         upload_file "${SPLIT_FILE}" "backup-volumes/${ANTI_DATE}-${DATE}/${SPLIT_FILE_NAME}"
         echo "Uploaded '${SPLIT_FILE_NAME}' to backup storage."
         rm -f "${SPLIT_FILE}"
