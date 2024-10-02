@@ -59,6 +59,17 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
         echo "Stopping and removing temporary container '${TEMP_CONTAINER_NAME}'..."
         docker stop "${TEMP_CONTAINER_NAME}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
 
+        # Get the size of the tar file
+        TAR_SIZE_KB=$(du -sk "${BACKUP_FILE}" | awk '{print $1}')
+        TAR_SIZE_GB=$(awk "BEGIN {printf \"%.2f\", ${TAR_SIZE_KB}/1048576}")
+        echo "Tar file size: ${TAR_SIZE_GB} GB"
+
+        # Estimate required space for the split files (roughly equal to the original tar size)
+        if [ "${FREE_SIZE_KB}" -lt "${TAR_SIZE_KB}" ]; then
+            echo "Not enough free disk space to split the tar file. Required: ${TAR_SIZE_GB} GB, Available: ${FREE_SIZE_GB} GB. Skipping backup for '${NAME}'."
+            continue
+        fi
+
         echo "Splitting the backup tar file for volume '${NAME}'..."
         split -a 3 -b "${SPLIT_SIZE}" "${BACKUP_FILE}" "${BACKUP_FILE}."
 
