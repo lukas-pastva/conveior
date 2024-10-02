@@ -24,7 +24,6 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
         # Define directories and files
         SERVER_DIR="${BACKUP_TEMP_DIR}/${NAME}"
         BACKUP_FILE="${SERVER_DIR}/backup.tar"
-        ZIP_FILE="${SERVER_DIR}/backup.zip"
         mkdir -p "${SERVER_DIR}"
         find "${SERVER_DIR}" -mindepth 1 -delete
 
@@ -45,19 +44,8 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
 
         echo "Sufficient disk space available."
 
-        TEMP_CONTAINER_NAME="temp-container-${NAME//[^a-zA-Z0-9]/-}"
-
-        echo "Creating temporary container '${TEMP_CONTAINER_NAME}' for volume '${NAME}'..."
-        docker run --rm -d --name "${TEMP_CONTAINER_NAME}" -v "${NAME}":/source busybox sleep infinity
-
-        echo "Creating tar archive inside container '${TEMP_CONTAINER_NAME}'..."
-        docker exec "${TEMP_CONTAINER_NAME}" sh -c "tar cvf /backup.tar -C /source ." > "${SERVER_DIR}/backup_stdout.log" 2> "${SERVER_DIR}/backup_errors.log"
-
-        echo "Copying 'backup.tar' from container '${TEMP_CONTAINER_NAME}' to host..."
-        docker cp "${TEMP_CONTAINER_NAME}":/backup.tar "${BACKUP_FILE}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
-
-        echo "Stopping and removing temporary container '${TEMP_CONTAINER_NAME}'..."
-        docker stop "${TEMP_CONTAINER_NAME}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
+        echo "Creating tar archive directly in conveior for volume '${NAME}'..."
+        docker run --rm -v "${NAME}":/source busybox sh -c "tar cf - -C /source ." > "${BACKUP_FILE}" 2>> "${SERVER_DIR}/backup_errors.log"
 
         echo "Splitting the backup tar file for volume '${NAME}'..."
         split -a 3 -b "${SPLIT_SIZE}" "${BACKUP_FILE}" "${BACKUP_FILE}."
