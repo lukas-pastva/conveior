@@ -21,10 +21,10 @@ function download_file_s3 {
   FILENAME="${2}"
   contentType="application/x-zip-compressed"
   dateValue=`date -R`
-  resource="/${BUCKET_NAME}/${FILE_S3}"
+  resource="/${BUCKET_NAME:+${BUCKET_NAME}/}${FILE_S3}"
   stringToSign="GET\n\n${contentType}\n${dateValue}\n${resource}"
   signature=`echo -en ${stringToSign} | openssl sha1 -hmac ${S3_SECRET} -binary | base64`
-  curl -s -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" -o "${FILENAME}"
+  curl -s -H "Date: ${dateValue}" -H "Content-Type: ${contentType}" -H "Authorization: AWS ${S3_KEY}:${signature}" "${S3_URL}/${BUCKET_NAME:+${BUCKET_NAME}/}${FILE_S3}" -o "${FILENAME}"
 }
 
 function download_file_gcp {
@@ -65,7 +65,7 @@ function upload_file_s3_v2 () {
   FILE_S3="${2}"
   contentType="application/x-zip-compressed"
   dateValue=$(date -R)
-  resource="/${BUCKET_NAME}/${FILE_S3}"
+  resource="/${BUCKET_NAME:+${BUCKET_NAME}/}${FILE_S3}"
   signature=$(echo -en "PUT
 
 ${contentType}
@@ -116,7 +116,7 @@ upload_file_s3_v4 () {
 AWS4-HMAC-SHA256
 ${dateValue}
 ${dateValue:0:8}/${region}/${service}/aws4_request
-$(echo -n "PUT\n/${BUCKET_NAME}/${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL#https://}\n\ncontent-type;host\n${contentSha256}")
+$(echo -n "PUT\n/${BUCKET_NAME:+${BUCKET_NAME}/}${FILE_S3}\n\ncontent-type:${contentType}\nhost:${S3_URL#https://}\n\ncontent-type;host\n${contentSha256}")
 EOF
 )
   echo "Debug: stringToSign:"
@@ -133,7 +133,7 @@ EOF
   signature=$(printf "%s" "${stringToSign}" | openssl dgst -sha256 -hex -mac HMAC -macopt "hexkey:${kSigning}" | cut -d ' ' -f 2)
   echo "Debug: Calculated Signature: $signature"
 
-  echo "Uploading into ${S3_URL}/${BUCKET_NAME}/${FILE_S3}"
+  echo "Uploading into ${S3_URL}/${BUCKET_NAME:+${BUCKET_NAME}/}${FILE_S3}"
 
   curl -i -X PUT -T "${ZIP_FILE}" \
     -H "Content-Type: ${contentType}" \
@@ -141,7 +141,7 @@ EOF
     -H "X-Amz-Date: ${dateValue}" \
     -H "X-Amz-Content-SHA256: ${contentSha256}" \
     -H "Authorization: AWS4-HMAC-SHA256 Credential=${S3_KEY}/${dateValue:0:8}/${region}/${service}/aws4_request,SignedHeaders=content-type;host;x-amz-date;x-amz-content-sha256,Signature=${signature}" \
-    "${S3_URL}/${BUCKET_NAME}/${FILE_S3}" || { echo "Error: Unable to upload file." >&2; return 1; }
+    "${S3_URL}/${BUCKET_NAME:+${BUCKET_NAME}/}${FILE_S3}" || { echo "Error: Unable to upload file." >&2; return 1; }
 }
 
 
