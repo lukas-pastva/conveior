@@ -53,6 +53,28 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
         echo "Creating tar archive inside container '${TEMP_CONTAINER_NAME}'..."
         docker exec "${TEMP_CONTAINER_NAME}" sh -c "tar cvf /backup.tar -C /source ." > "${SERVER_DIR}/backup_stdout.log" 2> "${SERVER_DIR}/backup_errors.log"
 
+        echo "Checking disk space before copying 'backup.tar' from container to host..."
+
+        # Get size of 'backup.tar' inside container
+        TAR_SIZE_KB=$(docker exec "${TEMP_CONTAINER_NAME}" sh -c "du -sk /backup.tar | awk '{print \$1}'")
+        TAR_SIZE_GB=$(awk "BEGIN {printf \"%.2f\", ${TAR_SIZE_KB}/1048576}")
+
+        echo "Tar file size inside container: ${TAR_SIZE_GB} GB"
+
+        # Get free disk space on host
+        FREE_SIZE_KB=$(df --output=avail "${BACKUP_TEMP_DIR}" | tail -1 | tr -d ' ')
+        FREE_SIZE_GB=$(awk "BEGIN {printf \"%.2f\", ${FREE_SIZE_KB}/1048576}")
+
+        if [ "${FREE_SIZE_KB}" -lt "${TAR_SIZE_KB}" ]; then
+            echo "Not enough free disk space to copy the tar file. Required: ${TAR_SIZE_GB} GB, Available: ${FREE_SIZE_GB} GB. Skipping backup for '${NAME}'."
+
+            echo "Stopping and removing temporary container '${TEMP_CONTAINER_NAME}'..."
+            docker stop "${TEMP_CONTAINER_NAME}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
+            continue
+        fi
+
+        echo "Sufficient disk space available to copy the tar file."
+
         echo "Copying 'backup.tar' from container '${TEMP_CONTAINER_NAME}' to host..."
         docker cp "${TEMP_CONTAINER_NAME}":/backup.tar "${BACKUP_FILE}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
 
