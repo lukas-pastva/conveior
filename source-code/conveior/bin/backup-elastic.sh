@@ -1,7 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 set -e
-trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-elastic overall=0 0' ERR
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-elastic overall=0 0' ERR
 
 export PODS=$(yq e '.config.backups.elasticsearch.[].name' ${CONFIG_FILE_DIR})
 export IFS=$','
@@ -74,13 +74,13 @@ for POD in $PODS; do
     find "${SERVER_DIR}" -mindepth 1 -delete
 
     # <-- push success=1 metric
-    /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-elastic pod=$POD 1
+    /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-elastic pod=$POD 1
 
   else
     echo_message "Not enough free disk space $FREE_SIZE < $DATA_SIZE * 1.8, not backing up"
 
     # <-- push success=0 or "skipped=0" metric
-    /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-elastic pod=$POD 0
+    /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-elastic pod=$POD 0
   fi
 
 done

@@ -3,7 +3,7 @@ source functions.inc.sh
 set -e
 
 # Send metric if there's an error at any point
-trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-files overall=0 0' ERR
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-files overall=0 0' ERR
 
 # Fetch the list of pods to back up
 PODS=$(yq e '.config.backups.files.[].name' "${CONFIG_FILE_DIR}")
@@ -51,6 +51,6 @@ for POD in $PODS; do
   done
 
   # Send success=1 metric per pod
-  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-files pod="${POD}" 1
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-files pod="${POD}" 1
 
 done

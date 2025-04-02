@@ -5,7 +5,7 @@ sleep $(shuf -i 10-30 -n1)
 
 source functions.inc.sh
 set -e
-trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup overall=0 0' ERR
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup overall=0 0' ERR
 
 if [[ "${CONTAINER_ORCHESTRATOR}" == "docker" ]]; then
   backup-mysql.sh
@@ -20,4 +20,4 @@ elif [[ "${CONTAINER_ORCHESTRATOR}" == "kubernetes" ]]; then
 fi
 
 # If we reached here without error, push a “success=1” for the entire backup script:
-/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup overall=1 1
+/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup overall=1 1

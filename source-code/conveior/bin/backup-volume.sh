@@ -2,7 +2,7 @@
 
 source functions.inc.sh
 set -e
-trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume overall=0 0' ERR
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-volume overall=0 0' ERR
 
 # Configuration variables
 BACKUP_TEMP_DIR="/tmp/backup_volumes"
@@ -43,7 +43,7 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
         if [ "${FREE_SIZE_KB}" -lt "${DATA_SIZE_KB}" ]; then
             echo "Not enough free disk space. Required: ${DATA_SIZE_GB} GB, Available: ${FREE_SIZE_GB} GB. Skipping backup for '${NAME}'."
             # push metric with "0"
-            /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume volume=$NAME 0
+            /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-volume volume=$NAME 0
             continue
         fi
 
@@ -71,7 +71,7 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
 
             echo "Stopping and removing temporary container '${TEMP_CONTAINER_NAME}'..."
             docker stop "${TEMP_CONTAINER_NAME}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
-            /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume volume=$NAME 0
+            /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-volume volume=$NAME 0
             continue
         fi
 
@@ -107,7 +107,7 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
         done
 
         find "${SERVER_DIR}" -mindepth 1 -delete
-        /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume volume=$NAME 1
+        /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-volume volume=$NAME 1
     done
 
     rm -rf "${BACKUP_TEMP_DIR}"

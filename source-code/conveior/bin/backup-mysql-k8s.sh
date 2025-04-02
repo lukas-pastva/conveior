@@ -1,7 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 set -e
-trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-mysql-k8s overall=0 0' ERR
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql-k8s overall=0 0' ERR
 
 POD_SHORT_LIST=$(yq e '.config.backups.dbs_mysql.[].name' "${CONFIG_FILE_DIR}")
 IFS=$'\n'
@@ -69,6 +69,6 @@ for POD_SHORT in $POD_SHORT_LIST; do
   done
 
   # <-- push success=1 metric (once per $POD_SHORT)
-  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-mysql-k8s pod=$POD_SHORT 1
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql-k8s pod=$POD_SHORT 1
 
 done

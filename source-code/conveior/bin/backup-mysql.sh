@@ -1,7 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 set -e
-trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-mysql overall=0 0' ERR
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql overall=0 0' ERR
 
 export PODS=$(yq e '.config.backups.dbs_mysql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
@@ -56,6 +56,6 @@ for POD in $PODS; do
   done
 
   # <-- push success=1 metric
-  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-mysql pod=$POD 1
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql pod=$POD 1
 
 done
