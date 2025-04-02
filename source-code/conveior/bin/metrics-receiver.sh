@@ -3,13 +3,14 @@ export $(xargs -0 -a "/proc/1/environ") 2>/dev/null
 
 source functions.inc.sh
 
-PUSH_GW_URL=$(yq e ".config.forwarder | .[].pushGw" ${CONFIG_FILE_DIR})
+PUSH_GW_URL="$(yq e '.config.forwarder | .[].pushGw' "${CONFIG_FILE_DIR}")"
 
 # ------------------------------------------------------------------------------
-# send_metric: accepts a metric name, zero or more key=value label pairs,
+# send_metric: accepts a metric name, zero or more "key=value" label pairs,
 # and a final numeric value. Example usage:
 #   ./metrics-receiver.sh send_metric my_metric foo=bar baz=qux 42
-# This will generate and push a Prometheus metric line like:
+#
+# This will generate and push a Prometheus metric line:
 #   my_metric{foo="bar",baz="qux"} 42
 # ------------------------------------------------------------------------------
 send_metric() {
@@ -22,7 +23,7 @@ send_metric() {
   local metric_name="$1"
   shift
 
-  # Everything except the last argument is treated as a label "key=value" pair
+  # Everything but the last argument is treated as a label
   local labels=()
   while (( $# > 1 )); do
     labels+=( "$1" )
@@ -32,7 +33,7 @@ send_metric() {
   # The last argument is the numeric value
   local value="$1"
 
-  # Build up a label string for Prometheus
+  # Build up the label string
   local label_string=""
   if [ ${#labels[@]} -gt 0 ]; then
     label_string="{"
@@ -40,7 +41,6 @@ send_metric() {
       local kv="${labels[$i]}"
       local key="${kv%%=*}"
       local val="${kv#*=}"
-      # Ensure we properly escape quotes or special characters if needed
       label_string+="${key}=\"${val}\""
       if [ $i -lt $(( ${#labels[@]} - 1 )) ]; then
         label_string+=","
@@ -49,23 +49,34 @@ send_metric() {
     label_string+="}"
   fi
 
-  # Construct the metric line that Prometheus expects
   local metric_line="${metric_name}${label_string} ${value}"
 
-  # Write to a temporary file
-  local temp_file
-  temp_file="$(mktemp)"
-  echo "$metric_line" > "$temp_file"
+  # Write to a temp file
+  local tmp_file
+  tmp_file="$(mktemp)"
+  echo "$metric_line" > "$tmp_file"
+
+  # Figure out the instance label so we can replace 'node-exporter' in the URL
+  local instance_name="missing"
+  for kv in "${labels[@]}"; do
+    if [[ "$kv" =~ ^instance= ]]; then
+      instance_name="${kv#instance=}"  # e.g. if label is instance=remp-nginx => instance_name="remp-nginx"
+    fi
+  done
+
+  # Simple Bash string replacement: replace FIRST occurrence of 'node-exporter'
+  # in PUSH_GW_URL with the instance name:
+  local final_url="${PUSH_GW_URL/node-exporter/$instance_name}"
 
   echo "Pushing metric: $metric_line"
-  # Push the metric to the push gateway
-  curl --silent --data-binary @"$temp_file" "${PUSH_GW_URL}"
 
-  # Clean up
-  rm "$temp_file"
+  # Push to the gateway
+  curl --silent --data-binary @"$tmp_file" "$final_url"
+
+  rm -f "$tmp_file"
 }
 
-# Allow the script itself to be called with a function name, e.g.
-#   ./metrics-receiver.sh send_metric my_metric foo=bar 123
-# so that the shell calls the function above.
+# Let this script be called like:
+#   ./metrics-receiver.sh send_metric metric_name instance=remp-nginx 1
+# etc.
 "$@"
