@@ -1,6 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 set -e
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-files-k8s overall=0 0' ERR
 
 PODS=$(yq e '.config.backups.files.[].name' "${CONFIG_FILE_DIR}")
 IFS=$'\n'

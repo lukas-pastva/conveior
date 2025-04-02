@@ -5,6 +5,7 @@ sleep $(shuf -i 10-30 -n1)
 
 source functions.inc.sh
 set -e
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup overall=0 0' ERR
 
 if [[ "${CONTAINER_ORCHESTRATOR}" == "docker" ]]; then
   backup-mysql.sh

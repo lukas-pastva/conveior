@@ -2,6 +2,7 @@
 
 source functions.inc.sh
 set -e
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume overall=0 0' ERR
 
 # Configuration variables
 BACKUP_TEMP_DIR="/tmp/backup_volumes"

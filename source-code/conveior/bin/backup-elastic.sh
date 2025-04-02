@@ -1,6 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 set -e
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-elastic overall=0 0' ERR
 
 export PODS=$(yq e '.config.backups.elasticsearch.[].name' ${CONFIG_FILE_DIR})
 export IFS=$','
@@ -20,7 +21,7 @@ for POD in $PODS; do
   find "${SERVER_DIR}" -mindepth 1 -delete
 
   echo_message "Creating backup repository"
-  docker exec ${POD} bash -c 'curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX PUT "127.0.0.1:9200/_snapshot/backup_repository?pretty" -H "Content-Type: application/json" -d"{\"type\":\"fs\",\"settings\":{\"location\":\"/tmp/backup\"}}"'
+  docker exec ${POD} bash -c 'curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX PUT "127.0.0.1:9200/_snapshot/backup_repository?pretty" -H "Content-Type: application/json" -d"{\"type\":\"fs\",\"settings\":{\"location\":\"/tmp/backup\"}}"' 
 
   echo_message "Deleting old backup"
   docker exec -i ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX GET 127.0.0.1:9200/_cat/snapshots/backup_repository | awk '{print \$1}' | while read SNAPSHOT ; do curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX DELETE 127.0.0.1:9200/_snapshot/backup_repository/\${SNAPSHOT}; done"
@@ -91,7 +92,6 @@ done
 # curl -X GET --user "${ELASTIC_USER}:${ELASTIC_PASSWORD}" "127.0.0.1:9200/_snapshot?pretty"
 # delete backup repo
 # curl -X DELETE --user "${ELASTIC_USER}:${ELASTIC_PASSWORD}" "localhost:9200/_snapshot/backup_repository?pretty"
-
 
 # OPTIONAL:
 #  docker exec -it ${POD} bash -c 'curl -sX GET "127.0.0.1:9200/_cat/repositories"'

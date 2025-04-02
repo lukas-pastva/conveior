@@ -1,6 +1,7 @@
 #!/bin/bash
 source functions.inc.sh
 set -e
+trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-pgsql overall=0 0' ERR
 
 export PODS=$(yq e '.config.backups.dbs_postgresql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
