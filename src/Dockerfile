@@ -1,8 +1,8 @@
 FROM golang:1.16-buster AS builder
 WORKDIR /app
-COPY ./source-code/conveior/go.* ./
+COPY ./src/go.* ./
 RUN go mod download
-COPY ./source-code/conveior/*.go ./
+COPY ./src/*.go ./
 RUN go build -o /conveior
 FROM debian:bullseye-slim
 
@@ -37,7 +37,7 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
 RUN curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
 
 COPY --from=builder /conveior /usr/local/bin/conveior
-COPY ./source-code/conveior/bin /usr/local/bin
+COPY ./src/bin /usr/local/bin
 RUN chmod -R +x /usr/local/bin
 
 EXPOSE 80
