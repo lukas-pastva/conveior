@@ -1,19 +1,10 @@
 name: sys-conveior
 namespace: sys-conveior
-type: DaemonSet
-
 pods:
   - name: sys-conveior
     repo: lukaspastva/conveior:latest
     resources: 100
     volumes:
-      - name: sys-conveior
-        type: "hostPath"
-        mountPath: /run/containerd/containerd.sock
-        # mountPath: /var/run/docker.sock
-        readOnly: true
-        hostPath: /run/containerd/containerd.sock
-        # mountPath: /var/run/docker.sock
       - name: config
         type: "ConfigMap"
         mountPath: ${CONFIG_FILE_DIR}
@@ -26,7 +17,6 @@ pods:
     env:
       - name: CONFIG_FILE_DIR
         value: "/home/config.yaml"
-
 configMaps:
   - name: config
     data:

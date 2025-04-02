@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source functions.inc.sh
+set -e
 
 # Configuration variables
 BACKUP_TEMP_DIR="/tmp/backup_volumes"
@@ -40,13 +41,14 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
 
         if [ "${FREE_SIZE_KB}" -lt "${DATA_SIZE_KB}" ]; then
             echo "Not enough free disk space. Required: ${DATA_SIZE_GB} GB, Available: ${FREE_SIZE_GB} GB. Skipping backup for '${NAME}'."
+            # push metric with "0"
+            /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume volume=$NAME 0
             continue
         fi
 
         echo "Sufficient disk space available."
 
         TEMP_CONTAINER_NAME="temp-container-${NAME//[^a-zA-Z0-9]/-}"
-
         echo "Creating temporary container '${TEMP_CONTAINER_NAME}' for volume '${NAME}'..."
         docker run --rm -d --name "${TEMP_CONTAINER_NAME}" -v "${NAME}":/source busybox sleep infinity
 
@@ -58,24 +60,23 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
         # Get size of 'backup.tar' inside container
         TAR_SIZE_KB=$(docker exec "${TEMP_CONTAINER_NAME}" sh -c "du -sk /backup.tar | awk '{print \$1}'")
         TAR_SIZE_GB=$(awk "BEGIN {printf \"%.2f\", ${TAR_SIZE_KB}/1048576}")
-
         echo "Tar file size inside container: ${TAR_SIZE_GB} GB"
 
         # Get free disk space on host
         FREE_SIZE_KB=$(df --output=avail "${BACKUP_TEMP_DIR}" | tail -1 | tr -d ' ')
         FREE_SIZE_GB=$(awk "BEGIN {printf \"%.2f\", ${FREE_SIZE_KB}/1048576}")
-
         if [ "${FREE_SIZE_KB}" -lt "${TAR_SIZE_KB}" ]; then
             echo "Not enough free disk space to copy the tar file. Required: ${TAR_SIZE_GB} GB, Available: ${FREE_SIZE_GB} GB. Skipping backup for '${NAME}'."
 
             echo "Stopping and removing temporary container '${TEMP_CONTAINER_NAME}'..."
             docker stop "${TEMP_CONTAINER_NAME}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
+            /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume volume=$NAME 0
             continue
         fi
 
         echo "Sufficient disk space available to copy the tar file."
 
-        echo "Copying 'backup.tar' from container '${TEMP_CONTAINER_NAME}' to host..."
+        echo "Copying 'backup.tar' from container to host..."
         docker cp "${TEMP_CONTAINER_NAME}":/backup.tar "${BACKUP_FILE}" > /dev/null 2>> "${SERVER_DIR}/backup_errors.log"
 
         echo "Stopping and removing temporary container '${TEMP_CONTAINER_NAME}'..."
@@ -105,11 +106,12 @@ if [[ $CURRENT_DAY -eq 7 || -n "$RUN_MANUALLY" ]]; then
         done
 
         find "${SERVER_DIR}" -mindepth 1 -delete
+        /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-volume volume=$NAME 1
     done
 
     rm -rf "${BACKUP_TEMP_DIR}"
     echo "Volume backup process completed successfully."
 
 else
-    echo "Backup script is not running today (${CURRENT_DAY}). To run manually, set the RUN_MANUALLY variable."
+    echo "Backup script is not running today (${CURRENT_DAY}). To run manually, set RUN_MANUALLY."
 fi

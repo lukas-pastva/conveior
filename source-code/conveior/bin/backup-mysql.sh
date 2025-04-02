@@ -1,12 +1,10 @@
 #!/bin/bash
 source functions.inc.sh
-
 set -e
 
 export PODS=$(yq e '.config.backups.dbs_mysql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
-for POD in $PODS;
-do
+for POD in $PODS; do
   echo_message "Backing up ${POD}"
 
   export SERVER_DIR="/tmp/${POD}"
@@ -39,7 +37,7 @@ do
   if [ "${ENCRYPT}" == "true" ]; then
     zip -qq --password "${SQL_PASS}" "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
   else
-    zip -qq "${ZIP_FILE}" "/${SERVER_DIR}/${FILE}"
+    zip -qq "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
   fi
 
   rm "/${SERVER_DIR}/${FILE}"
@@ -50,11 +48,13 @@ do
   echo_message "Deleting"
   rm "${ZIP_FILE}"
 
-  find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;
-  do
+  find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE; do
     export SPLIT_FILE_ONLY=$(echo "${SPLIT_FILE}" | awk -F"/" '{print $(NF)}')
     upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-mysql/${POD}/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}"
     rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}"
   done
+
+  # <-- push success=1 metric
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-mysql pod=$POD 1
 
 done

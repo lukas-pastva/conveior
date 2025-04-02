@@ -1,10 +1,10 @@
 #!/bin/bash
 source functions.inc.sh
+set -e
 
 export PODS=$(yq e '.config.backups.dbs_postgresql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
-for POD in $PODS;
-do
+for POD in $PODS; do
   echo_message "Backing up ${POD}"
 
   export DATABASES_STR=""
@@ -30,12 +30,10 @@ do
   mkdir -p "${SERVER_DIR}"
   find "${SERVER_DIR}" -mindepth 1 -delete
 
-  export DATABASE_ITEMS=$(docker exec -i ${POD} bash -c 'PGPASSWORD='${SQL_PASS}' psql -U '${SQL_USER}' -d postgres -c "SELECT datname FROM pg_database;" | awk '"'"'NR>3 {print last} {last=$0}'"'"' | awk -F " " '"'"'{print $1}'"'"' | head -n -1')
+  export DATABASE_ITEMS=$(docker exec -i ${POD} bash -c 'PGPASSWORD='${SQL_PASS}' psql -U '${SQL_USER}' -d postgres -c "SELECT datname FROM pg_database;"' | awk 'NR>3 {print last} {last=$0}' | awk -F " " '{print $1}' | head -n -1)
   export IFS=$'\n'
-  for DATABASE_ITEM in $DATABASE_ITEMS;
-  do
+  for DATABASE_ITEM in $DATABASE_ITEMS; do
     if [[ "template0,template1,postgres" == *"${DATABASE_ITEM}"* ]]; then
-      # echo "Skipping $DATABASE_ITEM"
       echo " "
     else
       echo "Backing up DB: $DATABASE_ITEM"
@@ -60,5 +58,8 @@ do
       rm "${ZIP_FILE}"
     fi
   done
+
+  # <-- push success=1 metric
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-pgsql pod=$POD 1
 
 done

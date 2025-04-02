@@ -1,17 +1,16 @@
 #!/bin/bash
 source functions.inc.sh
+set -e
 
 export POD_SHORT_LIST=$(yq e '.config.backups.dbs_postgresql.[].name' ${CONFIG_FILE_DIR})
 export IFS=$'\n'
-for POD_SHORT in $POD_SHORT_LIST;
-do
+for POD_SHORT in $POD_SHORT_LIST; do
   echo_message "Backing up ${POD_SHORT}"
 
   export POD_NAMESPACE=$(yq e ".config.backups.dbs_postgresql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" ${CONFIG_FILE_DIR})
   export POD_LIST=$(eval "kubectl -n ${POD_NAMESPACE} get pods --no-headers -o custom-columns=\":metadata.name\" | grep ${POD_SHORT}")
 
-  for POD in $POD_LIST;
-  do
+  for POD in $POD_LIST; do
     export DATABASES_STR=""
     export SERVER_DIR="/tmp/${POD_SHORT}"
     export FILE="${POD_SHORT}-${DATE}.sql"
@@ -26,12 +25,9 @@ do
 
     export DATABASE_ITEMS=$(kubectl -n ${POD_NAMESPACE} exec -i ${POD} -- bash -c "export PGPASSWORD='${SQL_PASS}' && psql -U '${SQL_USER}' -d postgres -c 'SELECT datname FROM pg_database;'" | tail -n +3 | head -n -2)
     export IFS=$'\n'
-    for DATABASE_ITEM in $DATABASE_ITEMS;
-    do
-      # trim whitespaces
+    for DATABASE_ITEM in $DATABASE_ITEMS; do
       DATABASE_ITEM=$(echo $DATABASE_ITEM | sed 's/^ *//')
       if [[ "template0,template1,postgres" == *"${DATABASE_ITEM}"* ]]; then
-        # echo "Skipping $DATABASE_ITEM"
         echo " "
       else
         echo "Backing up DB: $DATABASE_ITEM"
@@ -57,4 +53,8 @@ do
       fi
     done
   done
+
+  # <-- push success=1 metric (once per $POD_SHORT)
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-pgsql-k8s pod=$POD_SHORT 1
+
 done

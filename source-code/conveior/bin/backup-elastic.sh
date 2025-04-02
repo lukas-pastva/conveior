@@ -1,12 +1,11 @@
 #!/bin/bash
 source functions.inc.sh
-
 set -e
 
 export PODS=$(yq e '.config.backups.elasticsearch.[].name' ${CONFIG_FILE_DIR})
 export IFS=$','
-for POD in $PODS;
-do
+
+for POD in $PODS; do
 
   export ELASTIC_USER=$(yq e ".config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].username" ${CONFIG_FILE_DIR})
   export ELASTIC_PASSWD=$(yq e ".config.backups.elasticsearch | with_entries(select(.value.name == \"$POD\")) | .[].password" ${CONFIG_FILE_DIR})
@@ -30,14 +29,12 @@ do
 
   echo_message "Backing up elasticsearch $POD"
   DATA_SIZE=$(echo "$DATA_SIZE * 1.8" | bc)
-  if [ $(echo "$FREE_SIZE > $DATA_SIZE" | bc) -eq 1 ]; then
+  if [ "$(echo "$FREE_SIZE > $DATA_SIZE" | bc)" -eq 1 ]; then
     export EPOCH=$(date +%s)
     echo_message "EPOCH: $EPOCH"
     docker exec ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX PUT 127.0.0.1:9200/_snapshot/backup_repository/snapshot-${EPOCH}"
-    for i in {1..1000}
-    do
+    for i in {1..1000}; do
       export STATE=$(docker exec ${POD} bash -c "curl --user '${ELASTIC_USER}':'${ELASTIC_PASSWD}' -sX GET 127.0.0.1:9200/_snapshot/backup_repository/snapshot-${EPOCH}/_status?pretty | grep SUCCESS")
-
       if [[ "${STATE}" == *"SUCCESS"* ]]; then
         break
       else
@@ -47,7 +44,6 @@ do
     done
 
     echo_message "Performing Elasticsearch backup process"
-
     echo_message "Zipping ${VOLUME}${FILE}"
     docker exec -i ${POD} zip -rqq ${VOLUME}${FILE} ${VOLUME}
 
@@ -67,20 +63,25 @@ do
     echo_message "Deleting ${ZIP_FILE}"
     rm "${ZIP_FILE}"
 
-    find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE;
-    do
+    find "${SERVER_DIR}" -mindepth 1 -maxdepth 1 | while read SPLIT_FILE; do
       export SPLIT_FILE_ONLY=$(echo "${SPLIT_FILE}" | awk -F"/" '{print $(NF)}')
       upload_file "${SERVER_DIR}/${SPLIT_FILE_ONLY}" "backup-elasticsearch/${ANTI_DATE}-${DATE}/${SPLIT_FILE_ONLY}"
       echo_message "Deleting ${SERVER_DIR}/${SPLIT_FILE_ONLY} || true"
       rm "${SERVER_DIR}/${SPLIT_FILE_ONLY}" || true
     done
 
-    echo_message "Deleting the backup from elasticsearch"
     find "${SERVER_DIR}" -mindepth 1 -delete
+
+    # <-- push success=1 metric
+    /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-elastic pod=$POD 1
 
   else
     echo_message "Not enough free disk space $FREE_SIZE < $DATA_SIZE * 1.8, not backing up"
+
+    # <-- push success=0 or "skipped=0" metric
+    /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-elastic pod=$POD 0
   fi
+
 done
 
 # MIGRATION:

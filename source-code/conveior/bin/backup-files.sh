@@ -1,5 +1,6 @@
 #!/bin/bash
 source functions.inc.sh
+set -e
 
 # Fetch the list of pods to backup
 PODS=$(yq e '.config.backups.files.[].name' ${CONFIG_FILE_DIR})
@@ -32,4 +33,8 @@ for POD in $PODS; do
       echo "No files to backup in ${POD_PATH} for ${POD}"
     fi
   done
+
+  # <-- push success=1 metric
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-files pod=$POD 1
+
 done

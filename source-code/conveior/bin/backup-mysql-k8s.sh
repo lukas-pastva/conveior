@@ -1,18 +1,17 @@
 #!/bin/bash
 source functions.inc.sh
+set -e
 
 POD_SHORT_LIST=$(yq e '.config.backups.dbs_mysql.[].name' "${CONFIG_FILE_DIR}")
 IFS=$'\n'
-for POD_SHORT in $POD_SHORT_LIST;
-do
+for POD_SHORT in $POD_SHORT_LIST; do
   echo_message "Backing up ${POD_SHORT}"
 
   POD_NAMESPACE=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" "${CONFIG_FILE_DIR}")
   
   POD_REGEX="^${POD_SHORT}-([a-z0-9]+-[a-z0-9]+|[0-9]+)$"
   POD_LIST=$(kubectl -n "${POD_NAMESPACE}" get pods --no-headers -o custom-columns=":metadata.name" | grep -E "${POD_REGEX}" | head -n 1)
-  for POD in $POD_LIST;
-  do
+  for POD in $POD_LIST; do
     DATABASES_STR=""
     SERVER_DIR="/tmp/${POD_SHORT}"
     FILE="${POD_SHORT}-${DATE}.sql"
@@ -35,8 +34,7 @@ do
 
     DATABASE_ITEMS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c "mysql -u '${SQL_USER}' -p'${SQL_PASS}' -e 'show databases;' 2>/dev/null")
     IFS=$'\n'
-    for DATABASE_ITEM in $DATABASE_ITEMS;
-    do
+    for DATABASE_ITEM in $DATABASE_ITEMS; do
       if [[ "${DATABASE_ITEM}" != "Database" ]] && \
          [[ "${DATABASE_ITEM}" != "information_schema" ]] && \
          [[ "${DATABASE_ITEM}" != "mysql" ]] && \
@@ -66,5 +64,10 @@ do
 
       rm "${ZIP_FILE}"
     fi
+
   done
+
+  # <-- push success=1 metric (once per $POD_SHORT)
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status script=backup-mysql-k8s pod=$POD_SHORT 1
+
 done
