@@ -11,7 +11,7 @@ for POD in $PODS; do
   echo_message "Backing up $POD"
 
   # Fetching paths associated with this POD
-  POD_PATHS=$(yq e ".config.backups.files[] | select(.name == \"$POD\") | .path" ${CONFIG_FILE_DIR})
+  POD_PATHS=$(yq -r ".config.backups.files[] | select(.name == \"$POD\") | .path[]" "${CONFIG_FILE_DIR}")
 
   for POD_PATH in $POD_PATHS; do
     SERVER_DIR="/tmp/${POD}"
@@ -27,7 +27,6 @@ for POD in $PODS; do
       docker cp "${POD}:${POD_PATH}" "${SERVER_DIR}"
       LAST_DIR=$(echo ${POD_PATH} | awk -F"/" '{print $NF}')
       cd "${SERVER_DIR}/${LAST_DIR}" && zip -rqq "${ZIP_FILE}" "."
-
       upload_file "${ZIP_FILE}" "backup-file/${POD}/${ZIP_FILE_ONLY}"
       find "${SERVER_DIR}" -mindepth 1 -delete
     else
