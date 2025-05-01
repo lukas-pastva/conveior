@@ -3,15 +3,27 @@ source functions.inc.sh
 set -e
 trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql-k8s overall=0 0' ERR
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DEBUG LOGGING: print PATH and locate kubectl
+echo_message "DEBUG: PATH=$PATH"
+if command -v kubectl >/dev/null 2>&1; then
+  echo_message "DEBUG: kubectl found at $(command -v kubectl)"
+  kubectl version --client --short || true
+else
+  echo_message "DEBUG: kubectl NOT found in PATH"
+fi
+# ─────────────────────────────────────────────────────────────────────────────
+
+# fetch list of MySQL backup targets
 POD_SHORT_LIST=$(yq e '.config.backups.dbs_mysql.[].name' "${CONFIG_FILE_DIR}")
 IFS=$'\n'
 for POD_SHORT in $POD_SHORT_LIST; do
   echo_message "Backing up ${POD_SHORT}"
 
   POD_NAMESPACE=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" "${CONFIG_FILE_DIR}")
-  
   POD_REGEX="^${POD_SHORT}-([a-z0-9]+-[a-z0-9]+|[0-9]+)$"
   POD_LIST=$(kubectl -n "${POD_NAMESPACE}" get pods --no-headers -o custom-columns=":metadata.name" | grep -E "${POD_REGEX}" | head -n 1)
+
   for POD in $POD_LIST; do
     DATABASES_STR=""
     SERVER_DIR="/tmp/${POD_SHORT}"
@@ -27,13 +39,15 @@ for POD_SHORT in $POD_SHORT_LIST; do
     # try to get password from config
     SQL_PASS=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" "${CONFIG_FILE_DIR}")
     if [[ "${SQL_PASS}" == "null" ]]; then
-      SQL_PASS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c 'echo ${MYSQL_ROOT_PASSWORD}')
+      echo_message "DEBUG: fetching MYSQL_ROOT_PASSWORD via kubectl exec"
+      SQL_PASS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c 'echo "${MYSQL_ROOT_PASSWORD}"')
     fi
 
     mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
 
-    DATABASE_ITEMS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c "mysql -u '${SQL_USER}' -p'${SQL_PASS}' -e 'show databases;' 2>/dev/null")
+    # list databases
+    DATABASE_ITEMS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c "mysql -u '${SQL_USER}' -p'${SQL_PASS}' -e 'show databases;'" 2>/dev/null)
     IFS=$'\n'
     for DATABASE_ITEM in $DATABASE_ITEMS; do
       if [[ "${DATABASE_ITEM}" != "Database" ]] && \
@@ -44,15 +58,21 @@ for POD_SHORT in $POD_SHORT_LIST; do
         DATABASES_STR="${DATABASE_ITEM} ${DATABASES_STR}"
       fi
     done
+
     echo_message "Found DBs: ${DATABASES_STR}"
-    if [[ "${DATABASES_STR}" != "" ]]; then
-      kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c "mysqldump --user=${SQL_USER} --password='${SQL_PASS}' --single-transaction --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE} 2>/dev/null"
+    if [[ -n "${DATABASES_STR// }" ]]; then
+      # dump all non-system DBs
+      kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c \
+        "mysqldump --user='${SQL_USER}' --password='${SQL_PASS}' --single-transaction --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE} 2>/dev/null"
+
+      # copy dump locally
       kubectl cp "${POD_NAMESPACE}/${POD}:/tmp/${FILE}" "${SERVER_DIR}/${FILE}" >/dev/null
-      kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- bash -c "rm /tmp/${FILE}"
+      kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c "rm /tmp/${FILE}"
 
       ZIP_FILE_ONLY="${FILE}.zip"
       ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
 
+      # encrypt if requested
       ENCRYPT=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].encrypt" "${CONFIG_FILE_DIR}")
       if [ "${ENCRYPT}" == "true" ]; then
         zip -qq --password "${SQL_PASS}" "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
@@ -62,13 +82,12 @@ for POD_SHORT in $POD_SHORT_LIST; do
 
       rm "${SERVER_DIR}/${FILE}"
       upload_file "${ZIP_FILE}" "backup-mysql/${POD_SHORT}/${ZIP_FILE_ONLY}"
-
       rm "${ZIP_FILE}"
+    else
+      echo_message "No user databases found for ${POD}; skipping dump"
     fi
-
   done
 
-  # <-- push success=1 metric (once per $POD_SHORT)
-  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql-k8s pod=$POD_SHORT 1
-
+  # push success metric for this pod
+  /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql-k8s pod="${POD_SHORT}" 1
 done
