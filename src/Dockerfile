@@ -16,6 +16,7 @@ RUN apt-get update -qq && \
     cron \
     curl \
     containerd \
+    default-mysql-client \
     docker.io \
     jq \
     rsync \
