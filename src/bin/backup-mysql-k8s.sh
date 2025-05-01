@@ -1,93 +1,114 @@
 #!/bin/bash
+# source common functions
 source functions.inc.sh
-set -e
+
+# fail on anything unexpected, undefined vars, and enable pipefail
+set -euo pipefail
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEBUG: turn on command tracing with timestamps
+PS4='+$(date -u "+%Y-%m-%dT%H:%M:%SZ") # [TRACE] '
+set -x
+# trap to push failure metric
 trap '/usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql-k8s overall=0 0' ERR
-
 # ─────────────────────────────────────────────────────────────────────────────
-# DEBUG LOGGING: print PATH and locate kubectl
+
+# show PATH and verify kubectl again
 echo_message "DEBUG: PATH=$PATH"
-if command -v kubectl >/dev/null 2>&1; then
-  echo_message "DEBUG: kubectl found at $(command -v kubectl)"
-  kubectl version --client --short || true
+if command -v kubectl &>/dev/null; then
+  echo_message "DEBUG: kubectl at $(command -v kubectl)"
+  kubectl version --client || true
 else
-  echo_message "DEBUG: kubectl NOT found in PATH"
+  echo_message "DEBUG: kubectl NOT found"
 fi
-# ─────────────────────────────────────────────────────────────────────────────
 
-# fetch list of MySQL backup targets
+# get list of pods to back up from config
 POD_SHORT_LIST=$(yq e '.config.backups.dbs_mysql.[].name' "${CONFIG_FILE_DIR}")
+echo_message "DEBUG: POD_SHORT_LIST=${POD_SHORT_LIST}"
 IFS=$'\n'
 for POD_SHORT in $POD_SHORT_LIST; do
   echo_message "Backing up ${POD_SHORT}"
 
-  POD_NAMESPACE=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].namespace" "${CONFIG_FILE_DIR}")
+  # find namespace & pod name
+  POD_NAMESPACE=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name==\"$POD_SHORT\")) | .[].namespace" "${CONFIG_FILE_DIR}")
+  echo_message "DEBUG: POD_NAMESPACE=${POD_NAMESPACE}"
+
   POD_REGEX="^${POD_SHORT}-([a-z0-9]+-[a-z0-9]+|[0-9]+)$"
-  POD_LIST=$(kubectl -n "${POD_NAMESPACE}" get pods --no-headers -o custom-columns=":metadata.name" | grep -E "${POD_REGEX}" | head -n 1)
+  echo_message "DEBUG: POD_REGEX=${POD_REGEX}"
+
+  POD_LIST=$(kubectl -n "${POD_NAMESPACE}" get pods --no-headers -o custom-columns=":metadata.name" | grep -E "${POD_REGEX}" || true)
+  echo_message "DEBUG: POD_LIST=${POD_LIST}"
 
   for POD in $POD_LIST; do
-    DATABASES_STR=""
+    echo_message "DEBUG: selected POD=${POD}"
     SERVER_DIR="/tmp/${POD_SHORT}"
+    DATE=$(date +"%Y-%m-%dT%H-%M-%SZ")
     FILE="${POD_SHORT}-${DATE}.sql"
-    DESTINATION_FILE="${SERVER_DIR}/${FILE}.gz"
+    echo_message "DEBUG: SERVER_DIR=${SERVER_DIR}, FILE=${FILE}"
 
-    # try to get username from config
-    SQL_USER=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].username" "${CONFIG_FILE_DIR}")
-    if [[ "${SQL_USER}" == "null" ]]; then
-      SQL_USER="root"
-    fi
+    # grab credentials from config or pod
+    SQL_USER=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name==\"$POD_SHORT\")) | .[].username" "${CONFIG_FILE_DIR}")
+    [[ "$SQL_USER" == "null" ]] && SQL_USER="root"
+    echo_message "DEBUG: SQL_USER=${SQL_USER}"
 
-    # try to get password from config
-    SQL_PASS=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].password" "${CONFIG_FILE_DIR}")
-    if [[ "${SQL_PASS}" == "null" ]]; then
-      echo_message "DEBUG: fetching MYSQL_ROOT_PASSWORD via kubectl exec"
+    SQL_PASS=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name==\"$POD_SHORT\")) | .[].password" "${CONFIG_FILE_DIR}")
+    if [[ "$SQL_PASS" == "null" ]]; then
+      echo_message "DEBUG: fetching MYSQL_ROOT_PASSWORD from pod"
       SQL_PASS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c 'echo "${MYSQL_ROOT_PASSWORD}"')
     fi
+    echo_message "DEBUG: SQL_PASS=${SQL_PASS:+(non-empty)}"
 
+    # prepare local directory
     mkdir -p "${SERVER_DIR}"
     find "${SERVER_DIR}" -mindepth 1 -delete
+    echo_message "DEBUG: emptied ${SERVER_DIR}"
 
     # list databases
-    DATABASE_ITEMS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c "mysql -u '${SQL_USER}' -p'${SQL_PASS}' -e 'show databases;'" 2>/dev/null)
-    IFS=$'\n'
-    for DATABASE_ITEM in $DATABASE_ITEMS; do
-      if [[ "${DATABASE_ITEM}" != "Database" ]] && \
-         [[ "${DATABASE_ITEM}" != "information_schema" ]] && \
-         [[ "${DATABASE_ITEM}" != "mysql" ]] && \
-         [[ "${DATABASE_ITEM}" != "performance_schema" ]] && \
-         [[ "${DATABASE_ITEM}" != "sys" ]]; then
-        DATABASES_STR="${DATABASE_ITEM} ${DATABASES_STR}"
-      fi
-    done
+    echo_message "DEBUG: listing databases via kubectl exec"
+    DATABASE_ITEMS=$(kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c "mysql -u'${SQL_USER}' -p'${SQL_PASS}' -e 'show databases;'" 2>&1)
+    echo_message "DEBUG: raw DATABASE_ITEMS=\n${DATABASE_ITEMS}"
 
-    echo_message "Found DBs: ${DATABASES_STR}"
+    # filter out system DBs
+    DATABASES_STR=""
+    while read -r DB; do
+      case "$DB" in
+        Database|information_schema|mysql|performance_schema|sys) continue ;;
+        *) DATABASES_STR+="$DB " ;;
+      esac
+    done <<< "$DATABASE_ITEMS"
+    echo_message "DEBUG: USER DB list=($DATABASES_STR)"
+
     if [[ -n "${DATABASES_STR// }" ]]; then
-      # dump all non-system DBs
+      echo_message "DEBUG: dumping databases"
       kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c \
-        "mysqldump --user='${SQL_USER}' --password='${SQL_PASS}' --single-transaction --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE} 2>/dev/null"
+        "mysqldump --user='${SQL_USER}' --password='${SQL_PASS}' --single-transaction --extended-insert --databases ${DATABASES_STR} > /tmp/${FILE}"
+      echo_message "DEBUG: copied dump into pod /tmp/${FILE}"
 
-      # copy dump locally
-      kubectl cp "${POD_NAMESPACE}/${POD}:/tmp/${FILE}" "${SERVER_DIR}/${FILE}" >/dev/null
+      echo_message "DEBUG: copying SQL file locally"
+      kubectl cp "${POD_NAMESPACE}/${POD}:/tmp/${FILE}" "${SERVER_DIR}/${FILE}"
+      ls -l "${SERVER_DIR}"
       kubectl -n "${POD_NAMESPACE}" exec -i "${POD}" -- sh -c "rm /tmp/${FILE}"
 
-      ZIP_FILE_ONLY="${FILE}.zip"
-      ZIP_FILE="${SERVER_DIR}/${ZIP_FILE_ONLY}"
-
-      # encrypt if requested
-      ENCRYPT=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name == \"$POD_SHORT\")) | .[].encrypt" "${CONFIG_FILE_DIR}")
-      if [ "${ENCRYPT}" == "true" ]; then
-        zip -qq --password "${SQL_PASS}" "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
+      ZIP="${SERVER_DIR}/${FILE}.zip"
+      ENCRYPT=$(yq e ".config.backups.dbs_mysql | with_entries(select(.value.name==\"$POD_SHORT\")) | .[].encrypt" "${CONFIG_FILE_DIR}")
+      if [[ "$ENCRYPT" == "true" ]]; then
+        echo_message "DEBUG: encrypting zip"
+        zip -qq --password "${SQL_PASS}" "$ZIP" "${SERVER_DIR}/${FILE}"
       else
-        zip -qq "${ZIP_FILE}" "${SERVER_DIR}/${FILE}"
+        echo_message "DEBUG: zipping without password"
+        zip -qq "$ZIP" "${SERVER_DIR}/${FILE}"
       fi
-
+      ls -l "${SERVER_DIR}"
       rm "${SERVER_DIR}/${FILE}"
-      upload_file "${ZIP_FILE}" "backup-mysql/${POD_SHORT}/${ZIP_FILE_ONLY}"
-      rm "${ZIP_FILE}"
+
+      echo_message "DEBUG: uploading zip"
+      upload_file "$ZIP" "backup-mysql/${POD_SHORT}/$(basename "$ZIP")"
+      rm "$ZIP"
     else
-      echo_message "No user databases found for ${POD}; skipping dump"
+      echo_message "DEBUG: no user DBs to dump, skipping"
     fi
   done
 
-  # push success metric for this pod
+  echo_message "DEBUG: sending success metric for $POD_SHORT"
   /usr/local/bin/metrics-receiver.sh send_metric conveior_backup_status instance=backup-mysql-k8s pod="${POD_SHORT}" 1
 done
