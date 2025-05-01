@@ -1,0 +1,24 @@
+name: sys-conveior
+namespace: sys-conveior
+pods:
+  - name: sys-conveior
+    repo: lukaspastva/conveior:latest
+    resources: 100
+    volumes:
+      - name: config
+        type: "ConfigMap"
+        mountPath: ${CONFIG_FILE_DIR}
+        subPath: config.yaml
+    ports:
+      - name: http
+        port: 80
+    serviceMonitor:
+      enabled: true
+    env:
+      - name: CONFIG_FILE_DIR
+        value: "/home/config.yaml"
+configMaps:
+  - name: config
+    data:
+      config.yaml: |-
+        config: {}
