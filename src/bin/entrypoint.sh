@@ -1,5 +1,10 @@
 #!/bin/bash
 
+echo '  ___ ___  _ ____   _____(_) ___  _ __'
+echo ' / __/ _ \| '\''_ \ \ / / _ \ |/ _ \|'
+echo '| (_| (_) | | | \ V /  __/ | (_) | |'
+echo ' \___\___/|_| |_|\_/ \___|_|\___/|_|'
+echo ''
 
 # Write the inbound configuration YAML to file
 if [ -n "${CONFIG_FILE_CONTENTS:-}" ]; then
