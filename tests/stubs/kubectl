@@ -37,7 +37,9 @@ case "$1" in
           src="$root$5"
           if [[ "${STUB_FAIL_TAR_ONCE:-0}" == "1" && ! -f "$STUB_DIR/tar-failed-once" ]]; then
             touch "$STUB_DIR/tar-failed-once"
-            tar cf - -C "$src" . | head -c 700
+            # cut the stream at a block boundary after the first entries (GNU tar does not notice that)
+            tar cf - -C "$src" . 2>/dev/null | head -c 2048
+            echo "error: unexpected EOF" >&2
             exit 1
           fi
           exec tar cf - -C "$src" .

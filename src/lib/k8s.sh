@@ -38,24 +38,42 @@ k8s_dir_empty() {
 }
 
 # k8s_tar_to_dir <namespace> <pod> <container> <remote path> <local dir>
-# Streams `tar cf -` from the pod into <local dir>. Remote tar may exit 1 (file changed while
-# reading) - that is accepted as long as the local tar consumed a complete archive.
+# Streams `tar cf -` from the pod into <local dir>. Completeness is checked three ways, because a
+# reset exec connection is not always visible to the local tar (GNU tar ignores a short trailing block):
+#   1. kubectl stderr: anything that is not a "tar: ..." warning is a transport error
+#   2. local tar must exit 0 (a cut inside file data gives "Unexpected EOF")
+#   3. the number of regular files copied must not be lower than the number in the pod
+# Remote tar exit 1 (file changed / removed while reading) is accepted when the checks pass.
 k8s_tar_to_dir() {
-  local ns="$1" pod="$2" container="$3" src="$4" dest="$5" rcs rc_remote rc_local
+  local ns="$1" pod="$2" container="$3" src="$4" dest="$5" rcs rc_remote rc_local errf remote_count local_count
   find "$dest" -mindepth 1 -delete
-  k8s_exec "$ns" "$pod" "$container" tar cf - -C "$src" . | tar xf - -C "$dest"
-  rcs=("${PIPESTATUS[@]}")   # must be copied in one statement, every command resets PIPESTATUS
+  errf="$(mktemp "${WORK_ROOT}/tar-stderr.XXXXXX")"
+  k8s_exec "$ns" "$pod" "$container" tar cf - -C "$src" . 2> "$errf" | tar xf - -C "$dest"
+  rcs=("${PIPESTATUS[@]}")   # copied in one statement, every command resets PIPESTATUS
   rc_remote="${rcs[0]}"
   rc_local="${rcs[1]}"
+
+  if grep -Evq '^(tar: |Defaulted container )' "$errf"; then
+    err "transport error while copying ${pod}:${src}: $(grep -Ev '^(tar: |Defaulted container )' "$errf" | head -n 2 | tr '\n' ' ')"
+    rm -f -- "$errf"; return 1
+  fi
   if (( rc_local != 0 )); then
     err "incomplete archive from ${pod}:${src} (local tar rc=$rc_local, remote rc=$rc_remote)"
-    return 1
+    rm -f -- "$errf"; return 1
   fi
   if (( rc_remote > 1 )); then
-    err "tar in ${pod}:${src} failed (rc=$rc_remote)"
+    err "tar in ${pod}:${src} failed (rc=$rc_remote): $(head -n 2 "$errf" | tr '\n' ' ')"
+    rm -f -- "$errf"; return 1
+  fi
+  (( rc_remote == 1 )) && warn "tar in ${pod}:${src} reported warnings: $(grep '^tar: ' "$errf" | head -n 2 | tr '\n' ' ')"
+  rm -f -- "$errf"
+
+  remote_count="$(k8s_exec "$ns" "$pod" "$container" sh -c 'find "$1" -type f | wc -l' sh "$src" 2>/dev/null | tr -d '[:space:]')"
+  local_count="$(find "$dest" -type f | wc -l | tr -d '[:space:]')"
+  if [[ "$remote_count" =~ ^[0-9]+$ ]] && (( local_count < remote_count )); then
+    err "incomplete copy of ${pod}:${src}: ${local_count} of ${remote_count} files received"
     return 1
   fi
-  (( rc_remote == 1 )) && warn "tar in ${pod}:${src} reported warnings (files changed while reading), archive is complete"
   return 0
 }
 

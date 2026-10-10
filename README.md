@@ -9,7 +9,7 @@ Kubernetes cluster into an **S3 bucket**, and restores them again. It runs as a 
 - Storage: any S3 compatible endpoint via `rclone`, optional retention
 - Every step is retried, one failing target does not stop the others, the run ends with a summary
   table and a non-zero exit code when something failed (so the surrounding workflow can retry)
-- Pure bash + `kubectl`, `yq`, `rclone`, `zip`, `mariadb-client`. Image: `lukaspastva/conveior`
+- Pure bash + `kubectl`, `yq`, `rclone`, `zip`, `mariadb-client`. Image: `ghcr.io/lukas-pastva/conveior`
 
 Version 2 (2026-10) is a rewrite. Docker mode, PostgreSQL, Elasticsearch, volume backups,
 Prometheus metrics, the cron scheduler and the Go HTTP server were removed; the config format and
@@ -65,7 +65,7 @@ namespaces of the `files` targets. MySQL targets only need network access to the
 
 ```yaml
 container:
-  image: lukaspastva/conveior:<tag>
+  image: ghcr.io/lukas-pastva/conveior:<tag>
   command: ["conveior", "backup"]
   env:
     - name: CONFIG_FILE_DIR
@@ -83,7 +83,7 @@ volumes:
 ### Restore
 
 ```
-kubectl -n argo-workflows run restore -it --rm --image=lukaspastva/conveior:<tag> \
+kubectl -n argo-workflows run restore -it --rm --image=ghcr.io/lukas-pastva/conveior:<tag> \
   --overrides='{"spec":{"serviceAccountName":"...","volumes":[...]}}' -- \
   conveior restore-mysql shop-sql latest --drop
 ```
@@ -98,7 +98,7 @@ shellcheck -x src/bin/conveior src/lib/*.sh tests/*.sh
 docker build -t conveior ./src
 ```
 
-CI builds and pushes `lukaspastva/conveior:<git sha>` and `:latest` on every push to `main`.
+CI builds and pushes `ghcr.io/lukas-pastva/conveior:<git sha>` and `:latest` on every push to `main`.
 
 ## License
 
