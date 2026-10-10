@@ -2,7 +2,7 @@
 # conveior - shared helpers: logging, config access, retry, work dirs, result summary.
 # Sourced by bin/conveior. Requires bash 4+, yq (mikefarah v4), zip/unzip.
 
-CONVEIOR_VERSION="2.0.0"
+CONVEIOR_VERSION=2.1.0
 
 # Config file: CONFIG_FILE_DIR is the historical variable name (it points to a file), kept for compatibility.
 CONFIG_FILE="${CONFIG_FILE_DIR:-${CONFIG_FILE:-/home/config.yaml}}"

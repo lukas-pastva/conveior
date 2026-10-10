@@ -10,6 +10,9 @@ Kubernetes cluster into an **S3 bucket**, and restores them again. It runs as a 
 - Every step is retried, one failing target does not stop the others, the run ends with a summary
   table and a non-zero exit code when something failed (so the surrounding workflow can retry)
 - Pure bash + `kubectl`, `yq`, `rclone`, `zip`, `mariadb-client`. Image: `ghcr.io/lukas-pastva/conveior`
+- Since 2.1.0 the image is also the step image of the Argo `events` chart (it replaced the old `bashie`
+  toolbox): it additionally ships `git`, `ssh`, `helm`, `argocd`, `terraform` and the bash helper
+  libraries from `src/toolbox/` in `/tmp/app` (`source functions.inc.sh` works from the default workdir)
 
 Version 2 (2026-10) is a rewrite. Docker mode, PostgreSQL, Elasticsearch, volume backups,
 Prometheus metrics, the cron scheduler and the Go HTTP server were removed; the config format and
@@ -89,6 +92,14 @@ kubectl -n argo-workflows run restore -it --rm --image=ghcr.io/lukas-pastva/conv
 ```
 
 `restore-files ... --clean` empties the target directory in the pod before copying the backup in.
+
+## Toolbox (events chart)
+
+`src/toolbox/functions.inc.sh` (k8s helpers), `functions.git.inc.sh` (GitLab/GitHub helpers incl.
+`gitlab_backup`) and `functions.vault.inc.sh` (Vault KV) were taken over 1:1 from the last bashie
+image (`lukaspastva/bashie:02bba2c`, 2025-10-03) whose source repository was lost. They are legacy
+code and are not covered by shellcheck or the smoke test. Tool versions: terraform is pinned to
+1.7.4 on purpose (the tfstate on tronic was written with it), argocd CLI v3.1.0, helm v3.22.0.
 
 ## Development
 
