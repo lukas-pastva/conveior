@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# mysql client stub. Reads the credentials file, checks the password against STUB_DIR/expected-password.
+#   -e 'SHOW DATABASES'  -> prints STUB_DIR/databases
+#   -e 'DROP DATABASE x' -> logged
+#   no -e                -> stdin appended to STUB_DIR/mysql-import.sql
+# STUB_FAIL_MYSQL_ONCE=1 -> first call fails (simulates connection problem)
+set -u
+: "${STUB_DIR:?}"
+printf '%s\n' "mysql $*" >> "$STUB_DIR/mysql.log"
+creds="" stmt=""
+while (( $# > 0 )); do
+  case "$1" in
+    --defaults-extra-file=*) creds="${1#*=}" ;;
+    -e) stmt="$2"; shift ;;
+  esac
+  shift
+done
+[[ -r "$creds" ]] || { echo "mysql stub: no credentials file" >&2; exit 1; }
+pass="$(sed -n 's/^password=//p' "$creds")"
+[[ "$pass" == "$(cat "$STUB_DIR/expected-password")" ]] || { echo "mysql stub: Access denied" >&2; exit 1; }
+if [[ "${STUB_FAIL_MYSQL_ONCE:-0}" == "1" && ! -f "$STUB_DIR/mysql-failed-once" ]]; then
+  touch "$STUB_DIR/mysql-failed-once"; echo "mysql stub: Can't connect" >&2; exit 1
+fi
+case "$stmt" in
+  "SHOW DATABASES") cat "$STUB_DIR/databases" ;;
+  DROP*) printf '%s\n' "$stmt" >> "$STUB_DIR/mysql-drops.log" ;;
+  "") cat >> "$STUB_DIR/mysql-import.sql" ;;
+  *) echo "mysql stub: unsupported statement $stmt" >&2; exit 1 ;;
+esac

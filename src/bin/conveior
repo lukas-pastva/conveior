@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# conveior - backup of MySQL services and pod files from Kubernetes into an S3 bucket.
+#
+#   conveior backup                                   run every backup defined in the config
+#   conveior check                                    validate config, bucket access and kubectl access
+#   conveior list mysql|files <name>                  list stored backups of one target
+#   conveior restore-mysql <name> <object|latest> [--drop]
+#   conveior restore-files <name> <object|latest> [--clean] [--path <dir>]
+#   conveior version
+#
+# Config: YAML file given by CONFIG_FILE_DIR (default /home/config.yaml) or inline in CONFIG_FILE_CONTENTS.
+# See examples/config.yaml.
+
+set -o pipefail
+
+CONVEIOR_LIB="${CONVEIOR_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" 2>/dev/null && pwd)}"
+for f in common storage k8s backup restore; do
+  # shellcheck source=/dev/null
+  source "${CONVEIOR_LIB}/${f}.sh" || { echo "cannot load ${CONVEIOR_LIB}/${f}.sh" >&2; exit 1; }
+done
+
+usage() {
+  sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+}
+
+cmd_check() {
+  config_load
+  storage_init
+  log "config ${CONFIG_FILE}: $(cfg_len .config.backups.dbs_mysql) mysql target(s), $(cfg_len .config.backups.files) files target(s)"
+  if storage_check; then log "bucket ${BUCKET}: reachable"; else err "bucket ${BUCKET}: not reachable"; return 1; fi
+  if kubectl auth whoami >/dev/null 2>&1 || kubectl get --raw /readyz >/dev/null 2>&1; then
+    log "kubernetes API: reachable"
+  else
+    warn "kubernetes API: not reachable (files backups will fail)"
+  fi
+  return 0
+}
+
+main() {
+  local cmd="${1:-}"
+  [[ -n "$cmd" ]] && shift
+  trap workdir_cleanup_all EXIT
+
+  case "$cmd" in
+    backup)
+      banner
+      config_load
+      storage_init
+      backup_run
+      summary
+      ;;
+    check)
+      cmd_check
+      ;;
+    list)
+      config_load; storage_init
+      list_backups "${1:-}" "${2:-}"
+      ;;
+    restore-mysql)
+      config_load; storage_init
+      restore_mysql "${1:-}" "${2:-}" "${@:3}"
+      ;;
+    restore-files)
+      config_load; storage_init
+      restore_files "${1:-}" "${2:-}" "${@:3}"
+      ;;
+    version|--version|-v)
+      printf 'conveior %s\n' "$CONVEIOR_VERSION"
+      ;;
+    ""|help|--help|-h)
+      usage
+      ;;
+    *)
+      err "unknown command '$cmd'"
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

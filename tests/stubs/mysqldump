@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# mysqldump stub: prints a fake dump of the databases listed after --databases.
+set -u
+: "${STUB_DIR:?}"
+printf '%s\n' "mysqldump $*" >> "$STUB_DIR/mysql.log"
+dbs=() seen=0 creds=""
+for a in "$@"; do
+  case "$a" in
+    --databases) seen=1 ;;
+    --defaults-extra-file=*) creds="${a#*=}" ;;
+    --*) ;;
+    *) (( seen )) && dbs+=("$a") ;;
+  esac
+done
+[[ -r "$creds" ]] || { echo "mysqldump stub: no credentials file" >&2; exit 1; }
+(( ${#dbs[@]} > 0 )) || { echo "mysqldump stub: no databases" >&2; exit 1; }
+for d in "${dbs[@]}"; do
+  printf -- '-- dump of %s\nCREATE DATABASE `%s`;\nUSE `%s`;\nINSERT INTO t VALUES (1);\n' "$d" "$d" "$d"
+done

@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# kubectl stub for tests. STUB_DIR layout:
+#   pods                 running pod names, one per line
+#   podfs/<pod>/<path>   fake pod filesystem
+#   kubectl.log          every invocation
+# STUB_FAIL_TAR_ONCE=1  first "tar cf" stream is truncated and exits 1 (simulates a reset connection)
+set -u
+: "${STUB_DIR:?}"
+printf '%s\n' "kubectl $*" >> "$STUB_DIR/kubectl.log"
+
+pod="" args=("$@")
+# strip the namespace option, the stub has a single flat pod list
+i=0; rest=()
+while (( i < ${#args[@]} )); do
+  case "${args[$i]}" in
+    -n) i=$((i+2)) ;;
+    *) rest+=("${args[$i]}"); i=$((i+1)) ;;
+  esac
+done
+set -- "${rest[@]}"
+
+case "$1" in
+  auth) exit 0 ;;
+  get)
+    [[ "$2" == "pods" ]] || exit 1
+    cat "$STUB_DIR/pods"; exit 0 ;;
+  exec)
+    shift
+    [[ "$1" == "-i" ]] && shift
+    pod="$1"; shift
+    [[ "$1" == "-c" ]] && shift 2
+    [[ "$1" == "--" ]] && shift
+    root="$STUB_DIR/podfs/$pod"
+    case "$1" in
+      tar)
+        if [[ "$2" == "cf" ]]; then          # tar cf - -C <path> .
+          src="$root$5"
+          if [[ "${STUB_FAIL_TAR_ONCE:-0}" == "1" && ! -f "$STUB_DIR/tar-failed-once" ]]; then
+            touch "$STUB_DIR/tar-failed-once"
+            tar cf - -C "$src" . | head -c 700
+            exit 1
+          fi
+          exec tar cf - -C "$src" .
+        else                                  # tar xf - -C <path>
+          mkdir -p "$root$5"; exec tar xf - -C "$root$5"
+        fi ;;
+      sh)                                     # sh -c <script> sh <arg...> ; args that look like paths are mapped into the pod fs
+        script="$3"; shift 4
+        mapped=()
+        for a in "$@"; do [[ "$a" == /* ]] && a="$root$a"; mapped+=("$a"); done
+        exec sh -c "$script" sh "${mapped[@]}" ;;
+      *) echo "kubectl stub: unsupported exec command $*" >&2; exit 1 ;;
+    esac ;;
+  *) echo "kubectl stub: unsupported $*" >&2; exit 1 ;;
+esac

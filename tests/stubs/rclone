@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# rclone stub: "s3:<bucket>/<path>" maps to STUB_DIR/bucket/<path>.
+set -u
+: "${STUB_DIR:?}"
+printf '%s\n' "rclone $*" >> "$STUB_DIR/rclone.log"
+positional=()
+while (( $# > 0 )); do
+  case "$1" in
+    --config) cp "$2" "$STUB_DIR/rclone.conf.seen"; shift ;;
+    --retries) shift ;;
+    --separator|--format|--min-age) positional+=("$1=$2"); shift ;;
+    --*|-q) ;;
+    *) positional+=("$1") ;;
+  esac
+  shift
+done
+set -- "${positional[@]}"
+remote_to_local() { local p="${1#s3:}"; p="${p#*/}"; printf '%s/bucket/%s' "$STUB_DIR" "$p"; }
+cmd="$1"; shift
+case "$cmd" in
+  lsd) exit 0 ;;
+  copyto)
+    if [[ "$1" == s3:* ]]; then
+      src="$(remote_to_local "$1")"; [[ -f "$src" ]] || { echo "rclone stub: $1 not found" >&2; exit 1; }
+      mkdir -p "$(dirname "$2")"; cp "$src" "$2"
+    else
+      dst="$(remote_to_local "$2")"; mkdir -p "$(dirname "$dst")"; cp "$1" "$dst"
+    fi ;;
+  lsf)
+    dir="$(remote_to_local "${@: -1}")"
+    [[ -d "$dir" ]] || exit 0
+    for f in "$dir"/*; do
+      [[ -f "$f" ]] || continue
+      printf '%s;%s;%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S)" "$(wc -c < "$f" | tr -d ' ')" "$(basename "$f")"
+    done ;;
+  delete) printf 'delete %s\n' "$*" >> "$STUB_DIR/rclone-delete.log" ;;
+  *) echo "rclone stub: unsupported $cmd" >&2; exit 1 ;;
+esac

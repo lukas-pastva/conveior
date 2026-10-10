@@ -1,0 +1,32 @@
+# conveior configuration. Mount it as /home/config.yaml, point CONFIG_FILE_DIR at it,
+# or pass the whole file in the CONFIG_FILE_CONTENTS environment variable.
+config:
+  # S3 bucket (any S3 compatible storage, uploaded with rclone)
+  bucket_name: "my-backups"
+  s3_url: "https://hel1.your-objectstorage.com"
+  s3_key: "ACCESS_KEY"
+  s3_secret: "SECRET_KEY"
+  s3_region: "hel1"          # default: auto
+  use_path_style: true       # default: false
+  # s3_provider: "AWS"       # rclone provider name, default AWS
+  # retention_days: 30       # optional: delete objects older than N days from each target folder after a successful upload
+
+  backups:
+    # mysqldump over the network against the service <name>.<namespace>.svc.cluster.local:3306
+    dbs_mysql:
+      - name: "shop-sql"
+        namespace: "shop"
+        username: "root"       # default root
+        password: "secretPass"
+        encrypt: true          # zip protected with the DB password
+        # host: "shop-sql.shop.svc.cluster.local"
+        # port: 3306
+        # databases: ["shop", "shop_logs"]   # default: all non-system databases
+
+    # directories copied out of a running pod (tar stream over kubectl exec)
+    files:
+      - name: "shop"           # Deployment / StatefulSet name, pod is matched by this prefix
+        namespace: "shop"
+        path: "/app/media"     # or a list of directories
+        # container: "app"
+        # selector: "app.kubernetes.io/name=shop"   # label selector instead of the name prefix

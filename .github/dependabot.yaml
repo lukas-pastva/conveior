@@ -1,8 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: "gomod"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-    labels:
-      - "dependencies"
+  - package-ecosystem: "docker"
+    directory: "/src"
+    schedule:
+      interval: "monthly"

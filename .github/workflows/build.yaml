@@ -4,22 +4,39 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - 'examples/**'
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref }}
-
-      - name: build
-        env:
-          GITHUB_SHA: ${{ github.sha }}
+      - uses: actions/checkout@v4
+      - name: shellcheck
         run: |
-          docker login registry.hub.docker.com -u "${{ secrets.DOCKER_HUB_USERNAME }}" -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
-          docker build -f ./src/Dockerfile -t registry.hub.docker.com/lukaspastva/${{ github.event.repository.name }}:${GITHUB_SHA} ./src
-          docker push registry.hub.docker.com/lukaspastva/${{ github.event.repository.name }}:${GITHUB_SHA}
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -S warning -x src/bin/conveior src/bin/entrypoint.sh src/bin/backup.sh src/lib/*.sh tests/smoke.sh tests/stubs/*
+      - name: smoke test (stubbed kubectl/mysql/rclone)
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          bash tests/smoke.sh
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: |
+            lukaspastva/${{ github.event.repository.name }}:${{ github.sha }}
+            lukaspastva/${{ github.event.repository.name }}:latest
